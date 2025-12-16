@@ -3,34 +3,34 @@ import { Search } from "lucide-react";
 
 const jobs = [
   {
-    title: "Digital Transformation Consultant (w/m/d)",
-    description: "Begleitung unserer Kunden bei der agilen Optimierung ihrer Geschäftsprozesse. Analyse, Konzeption und Implementierung innovativer Lösungen.",
-    location: "Süddeutschland",
+    title: "Consultant Geschäftsoptimierung (w/m/d)",
+    description: "Unterstützung bei der Analyse und Optimierung von Geschäftsprozessen. Beratung unserer Kunden bei der digitalen Transformation und Implementierung effizienter Lösungen.",
+    location: "100% Remote / Homeoffice",
     type: "Festanstellung",
-    workModel: "Hybrides Arbeiten",
-    department: "Beratung",
+    workModel: "Vollzeit",
+    department: "Consulting",
   },
   {
-    title: "Digital Transformation Consultant (w/m/d)",
-    description: "Begleitung unserer Kunden bei der agilen Optimierung ihrer Geschäftsprozesse. Analyse, Konzeption und Implementierung innovativer Lösungen.",
-    location: "Westdeutschland",
+    title: "Assistenz der Geschäftsführung / Sekretariat (w/m/d)",
+    description: "Administrative Unterstützung der Geschäftsführung, Terminkoordination, Korrespondenz und Büroorganisation. Erste Anlaufstelle für interne und externe Anfragen.",
+    location: "Hybrid (2 Tage vor Ort)",
     type: "Festanstellung",
-    workModel: "Hybrides Arbeiten",
-    department: "Beratung",
+    workModel: "Vollzeit / Teilzeit",
+    department: "Administration",
   },
   {
     title: "Softwareentwickler (w/m/d) - Webentwicklung",
-    description: "Entwicklung von Webapplikationen mit modernen Technologien. Eigenverantwortliches Arbeiten nach DevOps-Prinzipien.",
-    location: "Süddeutschland",
+    description: "Entwicklung von Webapplikationen mit modernen Technologien. Eigenverantwortliches Arbeiten nach DevOps-Prinzipien in einem agilen Team.",
+    location: "100% Remote / Homeoffice",
     type: "Festanstellung",
-    workModel: "Hybrides Arbeiten",
+    workModel: "Vollzeit",
     department: "IT & Entwicklung",
   },
 ];
 
 export const JobListings = () => {
   return (
-    <section id="jobs" className="py-20 bg-background">
+    <section id="jobs" className="py-20 bg-muted/30">
       <div className="container">
         <div className="text-center max-w-2xl mx-auto mb-12 space-y-4 animate-fade-up">
           <span className="inline-block text-sm font-semibold text-primary bg-primary/10 px-4 py-1.5 rounded-full">
@@ -40,8 +40,21 @@ export const JobListings = () => {
             Finde deinen Traumjob
           </h2>
           <p className="text-muted-foreground">
-            Entdecke unsere aktuellen Stellenangebote und werde Teil unseres Teams
+            Arbeite flexibel von zu Hause oder im Büro – entdecke unsere aktuellen Stellenangebote
           </p>
+        </div>
+
+        {/* Remote Work Banner */}
+        <div className="max-w-3xl mx-auto mb-10 p-6 rounded-2xl bg-gradient-to-r from-secondary/10 to-accent/10 border border-secondary/20 animate-fade-up">
+          <div className="flex items-center gap-4">
+            <div className="w-12 h-12 rounded-xl bg-secondary/20 flex items-center justify-center flex-shrink-0">
+              <span className="text-2xl">🏠</span>
+            </div>
+            <div>
+              <h3 className="font-semibold text-foreground">Remote-First Unternehmen</h3>
+              <p className="text-sm text-muted-foreground">Die meisten unserer Positionen sind zu 100% im Homeoffice möglich – wir bieten maximale Flexibilität.</p>
+            </div>
+          </div>
         </div>
 
         {/* Search Bar */}
