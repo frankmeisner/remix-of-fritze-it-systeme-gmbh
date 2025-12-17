@@ -2,7 +2,7 @@ import { Linkedin, Mail } from "lucide-react";
 
 const teamMembers = [
   {
-    name: "Fritze",
+    name: "Dr. Jens Fritze",
     role: "Geschäftsführer",
     image: "https://images.unsplash.com/photo-1560250097-0b93528c311a?w=400&h=500&fit=crop&crop=faces&facepad=2.5",
     description: "20+ Jahre Erfahrung in IT-Strategieberatung",
