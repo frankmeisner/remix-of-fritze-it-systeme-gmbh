@@ -4,42 +4,42 @@ const teamMembers = [
   {
     name: "Dr. Michael Schneider",
     role: "Geschäftsführer",
-    image: "https://images.unsplash.com/photo-1560250097-0b93528c311a?w=400&h=500&fit=crop&crop=top",
+    image: "https://images.unsplash.com/photo-1560250097-0b93528c311a?w=400&h=500&fit=crop&crop=faces&facepad=2.5",
     description: "20+ Jahre Erfahrung in IT-Strategieberatung",
     email: "m.schneider@fritze-it.solutions",
   },
   {
     name: "Sarah Weber",
     role: "Leiterin Consulting",
-    image: "https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=400&h=500&fit=crop&crop=top",
+    image: "https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=400&h=500&fit=crop&crop=faces&facepad=2.5",
     description: "Expertin für digitale Transformation",
     email: "s.weber@fritze-it.solutions",
   },
   {
     name: "Thomas Müller",
     role: "Lead Developer",
-    image: "https://images.unsplash.com/photo-1519085360753-af0119f7cbe7?w=400&h=500&fit=crop&crop=top",
+    image: "https://images.unsplash.com/photo-1519085360753-af0119f7cbe7?w=400&h=500&fit=crop&crop=faces&facepad=2.5",
     description: "Full-Stack Entwicklung & Cloud-Architektur",
     email: "t.mueller@fritze-it.solutions",
   },
   {
     name: "Lisa Hoffmann",
     role: "HR & People Manager",
-    image: "https://images.unsplash.com/photo-1594744803329-e58b31de8bf5?w=400&h=500&fit=crop&crop=top",
+    image: "https://images.unsplash.com/photo-1594744803329-e58b31de8bf5?w=400&h=500&fit=crop&crop=faces&facepad=2.5",
     description: "Ihr erster Ansprechpartner für Bewerbungen",
     email: "l.hoffmann@fritze-it.solutions",
   },
   {
     name: "Jan Becker",
     role: "Senior Consultant",
-    image: "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=400&h=500&fit=crop&crop=top",
+    image: "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=400&h=500&fit=crop&crop=faces&facepad=2.5",
     description: "Prozessoptimierung & Projektmanagement",
     email: "j.becker@fritze-it.solutions",
   },
   {
     name: "Anna Fischer",
     role: "UX/UI Designerin",
-    image: "https://images.unsplash.com/photo-1580489944761-15a19d654956?w=400&h=500&fit=crop&crop=top",
+    image: "https://images.unsplash.com/photo-1580489944761-15a19d654956?w=400&h=500&fit=crop&crop=faces&facepad=2.5",
     description: "User Experience & Interface Design",
     email: "a.fischer@fritze-it.solutions",
   },
@@ -68,11 +68,11 @@ export const Team = () => {
               className="group bg-card rounded-2xl overflow-hidden shadow-soft hover:shadow-card transition-all duration-300 hover:-translate-y-1 animate-fade-up"
               style={{ animationDelay: `${100 + index * 100}ms` }}
             >
-              <div className="relative h-64 overflow-hidden">
+              <div className="relative h-72 overflow-hidden">
                 <img
                   src={member.image}
                   alt={member.name}
-                  className="w-full h-full object-cover object-top group-hover:scale-105 transition-transform duration-500"
+                  className="w-full h-full object-cover object-center group-hover:scale-105 transition-transform duration-500"
                 />
                 <div className="absolute inset-0 bg-gradient-to-t from-foreground/80 via-foreground/20 to-transparent" />
                 <div className="absolute bottom-4 left-4 right-4">
