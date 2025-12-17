@@ -30,7 +30,7 @@ const UeberUns = () => {
                   <Building2 className="w-6 h-6 text-primary" />
                 </div>
                 <div>
-                  <h2 className="text-xl font-bold mb-2">Fritze IT GmbH</h2>
+                  <h2 className="text-xl font-bold mb-2 text-foreground">Fritze IT GmbH</h2>
                   <p className="text-muted-foreground">
                     Ihr Partner für Prozessoptimierung seit 2011
                   </p>
@@ -50,7 +50,7 @@ const UeberUns = () => {
                   <Target className="w-6 h-6 text-primary" />
                 </div>
                 <div>
-                  <h2 className="text-xl font-bold mb-2">Unsere Expertise</h2>
+                  <h2 className="text-xl font-bold mb-2 text-foreground">Unsere Expertise</h2>
                   <p className="text-muted-foreground">
                     Prozessoptimierung ist unser Kerngeschäft
                   </p>
@@ -87,7 +87,7 @@ const UeberUns = () => {
                   <Users className="w-6 h-6 text-primary" />
                 </div>
                 <div>
-                  <h2 className="text-xl font-bold mb-2">Remote First</h2>
+                  <h2 className="text-xl font-bold mb-2 text-foreground">Remote First</h2>
                   <p className="text-muted-foreground">
                     Modernes Arbeiten ist bei uns Standard
                   </p>
@@ -102,7 +102,7 @@ const UeberUns = () => {
 
             {/* Contact Information */}
             <section className="bg-card rounded-2xl p-8 shadow-soft">
-              <h2 className="text-xl font-bold mb-6">Kontaktinformationen</h2>
+              <h2 className="text-xl font-bold mb-6 text-foreground">Kontaktinformationen</h2>
               
               <div className="grid md:grid-cols-4 gap-6">
                 <div className="flex items-start gap-3">
