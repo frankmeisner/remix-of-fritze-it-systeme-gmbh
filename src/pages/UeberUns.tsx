@@ -104,48 +104,44 @@ const UeberUns = () => {
             <section className="bg-card rounded-2xl p-8 shadow-soft">
               <h2 className="text-xl font-bold mb-6">Kontaktinformationen</h2>
               
-              <div className="grid md:grid-cols-2 gap-6">
-                <div className="space-y-4">
-                  <div className="flex items-start gap-3">
-                    <MapPin className="w-5 h-5 text-primary mt-0.5" />
-                    <div>
-                      <p className="font-medium text-foreground">Adresse</p>
-                      <p className="text-muted-foreground text-sm">
-                        Willi-Eichler-Straße 26<br />
-                        37079 Göttingen<br />
-                        Deutschland
-                      </p>
-                    </div>
+              <div className="grid md:grid-cols-4 gap-6">
+                <div className="flex items-start gap-3">
+                  <MapPin className="w-5 h-5 text-primary mt-0.5 flex-shrink-0" />
+                  <div>
+                    <p className="font-medium text-foreground">Adresse</p>
+                    <p className="text-muted-foreground text-sm">
+                      Willi-Eichler-Straße 26<br />
+                      37079 Göttingen<br />
+                      Deutschland
+                    </p>
                   </div>
-                  
-                  <div className="flex items-start gap-3">
-                    <Mail className="w-5 h-5 text-primary mt-0.5" />
-                    <div>
-                      <p className="font-medium text-foreground">E-Mail</p>
-                      <p className="text-muted-foreground text-sm">info@fritze-it.solutions</p>
-                      <p className="text-muted-foreground text-sm">bewerbung@fritze-it.solutions</p>
-                    </div>
+                </div>
+                
+                <div className="flex items-start gap-3">
+                  <Mail className="w-5 h-5 text-primary mt-0.5 flex-shrink-0" />
+                  <div>
+                    <p className="font-medium text-foreground">E-Mail</p>
+                    <p className="text-muted-foreground text-sm">info@fritze-it.solutions</p>
+                    <p className="text-muted-foreground text-sm">bewerbung@fritze-it.solutions</p>
                   </div>
                 </div>
 
-                <div className="space-y-4">
-                  <div className="flex items-start gap-3">
-                    <Clock className="w-5 h-5 text-primary mt-0.5" />
-                    <div>
-                      <p className="font-medium text-foreground">Bürozeiten</p>
-                      <p className="text-muted-foreground text-sm">
-                        Mo-Fr: 8:00 - 17:00 Uhr<br />
-                        Sa: 9:00 - 12:00 Uhr
-                      </p>
-                    </div>
+                <div className="flex items-start gap-3">
+                  <Clock className="w-5 h-5 text-primary mt-0.5 flex-shrink-0" />
+                  <div>
+                    <p className="font-medium text-foreground">Bürozeiten</p>
+                    <p className="text-muted-foreground text-sm">
+                      Mo-Fr: 8:00 - 17:00 Uhr<br />
+                      Sa: 9:00 - 12:00 Uhr
+                    </p>
                   </div>
-                  
-                  <div className="flex items-start gap-3">
-                    <Calendar className="w-5 h-5 text-primary mt-0.5" />
-                    <div>
-                      <p className="font-medium text-foreground">Gegründet</p>
-                      <p className="text-muted-foreground text-sm">2011</p>
-                    </div>
+                </div>
+                
+                <div className="flex items-start gap-3">
+                  <Calendar className="w-5 h-5 text-primary mt-0.5 flex-shrink-0" />
+                  <div>
+                    <p className="font-medium text-foreground">Gegründet</p>
+                    <p className="text-muted-foreground text-sm">2011</p>
                   </div>
                 </div>
               </div>
