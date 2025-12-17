@@ -11,7 +11,7 @@ export const Header = () => {
     <header className="sticky top-0 z-50 w-full border-b border-border/50 bg-background/80 backdrop-blur-xl">
       <div className="container flex h-16 items-center justify-between">
         <Link to="/" className="flex items-center gap-2.5 group">
-          <img src={logo} alt="Fritze IT-Systeme Logo" className="h-12 w-auto" />
+          <img src={logo} alt="Fritze IT-Systeme Logo" className="h-16 w-auto" />
         </Link>
         
         {/* Desktop Navigation */}
