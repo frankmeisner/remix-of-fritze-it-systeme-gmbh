@@ -44,7 +44,7 @@ export const Header = () => {
     <header className="sticky top-0 z-50 w-full border-b border-border/50 bg-background/80 backdrop-blur-xl">
       <div className="container flex h-28 items-center justify-between">
         <a href="/" onClick={handleLogoClick} className="flex items-center gap-2.5 group cursor-pointer">
-          <img src={logo} alt="Fritze IT-Systeme Logo" className="h-24 w-auto object-contain" />
+          <img src={logo} alt="Fritze IT-Systeme Logo" className="h-24 w-auto object-contain dark:brightness-0 dark:invert" />
         </a>
         
         {/* Desktop Navigation */}

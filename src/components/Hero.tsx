@@ -5,7 +5,7 @@ export const Hero = () => {
       {/* Background Image */}
       <div className="absolute inset-0">
         <img src="https://images.unsplash.com/photo-1553877522-43269d4ea984?w=1920&h=1080&fit=crop" alt="Modern office workspace" className="w-full h-full object-cover" />
-        <div className="absolute inset-0 bg-gradient-to-r from-foreground/90 via-foreground/70 to-foreground/40" />
+        <div className="absolute inset-0 bg-foreground/60" />
       </div>
 
       {/* Floating Elements */}
