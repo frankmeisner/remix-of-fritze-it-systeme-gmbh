@@ -11,7 +11,7 @@ const teamMembers = [
   {
     name: "Sarah Weber",
     role: "Leiterin Consulting",
-    image: "https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=400&h=500&fit=crop&crop=faces&facepad=2.5",
+    image: "https://images.unsplash.com/photo-1551836022-deb4988cc6c0?w=400&h=500&fit=crop&crop=faces&facepad=2.5",
     description: "Expertin für digitale Transformation",
     email: "s.weber@fritze-it.solutions",
   },
