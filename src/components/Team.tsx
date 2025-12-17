@@ -18,7 +18,7 @@ const teamMembers = [
   {
     name: "Thomas Müller",
     role: "Lead Developer",
-    image: "https://images.unsplash.com/photo-1548372290-8d01b6c8e78c?w=400&h=500&fit=crop&crop=face&facepad=2",
+    image: "https://images.unsplash.com/photo-1548372290-8d01b6c8e78c?w=400&h=500&fit=crop&crop=focalpoint&fp-y=0.35",
     description: "Full-Stack Entwicklung & Cloud-Architektur",
     email: "t.mueller@fritze-it.solutions",
   },
@@ -32,7 +32,7 @@ const teamMembers = [
   {
     name: "Jan Becker",
     role: "Senior Consultant",
-    image: "https://images.unsplash.com/photo-1560250097-0b93528c311a?w=400&h=500&fit=crop&crop=face&facepad=2",
+    image: "https://images.unsplash.com/photo-1560250097-0b93528c311a?w=400&h=500&fit=crop&crop=focalpoint&fp-y=0.35",
     description: "Prozessoptimierung & Projektmanagement",
     email: "j.becker@fritze-it.solutions",
   },
