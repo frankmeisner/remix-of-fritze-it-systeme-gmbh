@@ -1,4 +1,4 @@
-import { ArrowDown, Users, Rocket, Home, Wifi } from "lucide-react";
+import { ArrowDown, Users, Rocket, Wifi } from "lucide-react";
 import { Button } from "@/components/ui/button";
 export const Hero = () => {
   return <section className="relative min-h-[90vh] flex items-center overflow-hidden">
@@ -15,8 +15,8 @@ export const Hero = () => {
       <div className="container relative z-10 py-20">
         <div className="max-w-3xl space-y-8 animate-fade-up">
           {/* Badge */}
-          <div className="inline-flex items-center gap-2 bg-primary-foreground/10 backdrop-blur-sm border border-primary-foreground/20 rounded-full px-4 py-2 text-sm text-primary-foreground">Fritze IT-Systeme GmbH<Home className="w-4 h-4" />
-            Fritze IT-Systeme – Remote First
+          <div className="inline-flex items-center gap-2 bg-primary-foreground/10 backdrop-blur-sm border border-primary-foreground/20 rounded-full px-4 py-2 text-sm text-primary-foreground">
+            Fritze IT-Systeme GmbH
           </div>
 
           <h1 className="text-4xl md:text-5xl lg:text-6xl font-extrabold text-primary-foreground leading-tight">
