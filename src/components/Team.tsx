@@ -11,14 +11,14 @@ const teamMembers = [
   {
     name: "Sarah Weber",
     role: "Leiterin Consulting",
-    image: "https://images.unsplash.com/photo-1573497019940-1c28c88b4f3e?w=400&h=400&fit=crop&crop=face",
+    image: "https://images.unsplash.com/photo-1587614382346-4ec70e388b28?w=400&h=500&fit=crop&crop=face&facepad=2.5",
     description: "Expertin für digitale Transformation",
     email: "s.weber@fritze-it.solutions",
   },
   {
     name: "Thomas Müller",
     role: "Lead Developer",
-    image: "https://images.unsplash.com/photo-1560250097-0b93528c311a?w=400&h=400&fit=crop&crop=face",
+    image: "https://images.unsplash.com/photo-1556157382-97edd2f9e3ee?w=400&h=500&fit=crop&crop=face&facepad=2.5",
     description: "Full-Stack Entwicklung & Cloud-Architektur",
     email: "t.mueller@fritze-it.solutions",
   },
@@ -32,7 +32,7 @@ const teamMembers = [
   {
     name: "Jan Becker",
     role: "Senior Consultant",
-    image: "https://images.unsplash.com/photo-1633332755192-727a05c4013d?w=400&h=400&fit=crop&crop=face",
+    image: "https://images.unsplash.com/photo-1600486913747-55e5470d6f40?w=400&h=500&fit=crop&crop=face&facepad=2.5",
     description: "Prozessoptimierung & Projektmanagement",
     email: "j.becker@fritze-it.solutions",
   },
