@@ -59,7 +59,7 @@ const Datenschutz = () => {
 
               <div className="text-muted-foreground mb-6">
                 <p className="font-medium text-foreground">Geschäftsführer:</p>
-                <p>Michael Schneider</p>
+                <p>Jens Fritze</p>
               </div>
 
               <h3 className="text-lg font-semibold mb-3">Kontaktmöglichkeiten</h3>

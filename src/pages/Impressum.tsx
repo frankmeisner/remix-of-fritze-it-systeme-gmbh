@@ -63,7 +63,7 @@ const Impressum = () => {
               <h3 className="text-lg font-semibold mb-2">Verantwortlich für den Inhalt</h3>
               <p className="text-muted-foreground">
                 Verantwortlich für den Inhalt nach § 18 Abs. 2 MStV (Medienstaatsvertrag):<br /><br />
-                Dr. Michael Schneider<br />
+                Dr. Jens Fritze<br />
                 Willi-Eichler-Straße 26<br />
                 37079 Göttingen
               </p>
