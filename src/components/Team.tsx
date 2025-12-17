@@ -74,7 +74,7 @@ export const Team = () => {
                 />
                 <div className="absolute inset-0 bg-gradient-to-t from-foreground/80 via-foreground/20 to-transparent" />
                 <div className="absolute bottom-4 left-4 right-4">
-                  <h3 className="text-xl font-bold text-primary-foreground">{member.name}</h3>
+                  <h3 className="text-xl font-bold text-white">{member.name}</h3>
                   <p className="text-secondary font-medium">{member.role}</p>
                 </div>
               </div>
