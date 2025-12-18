@@ -15,6 +15,7 @@ import { Plus, Calendar, User, Phone, Euro, AlertCircle, Mail, Key, Activity, Me
 import { format } from 'date-fns';
 import { de } from 'date-fns/locale';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { taskCreationSchema, validateWithSchema } from '@/lib/validation';
 
 const priorityColors: Record<TaskPriority, string> = {
   low: 'bg-slate-500/20 text-slate-700 dark:text-slate-300 border border-slate-500/30',
@@ -124,21 +125,35 @@ export default function AdminTasksView() {
   };
 
   const handleCreateTask = async () => {
-    if (!newTask.title || !newTask.customer_name) {
-      toast({ title: 'Fehler', description: 'Titel und Kundenname sind Pflichtfelder.', variant: 'destructive' });
+    // Use zod schema for comprehensive validation
+    const validation = validateWithSchema(taskCreationSchema, {
+      title: newTask.title.trim(),
+      description: newTask.description?.trim() || null,
+      customer_name: newTask.customer_name.trim(),
+      customer_phone: newTask.customer_phone?.trim() || null,
+      test_email: newTask.test_email?.trim() || null,
+      test_password: newTask.test_password || null,
+      deadline: newTask.deadline || null,
+      priority: newTask.priority,
+      special_compensation: newTask.special_compensation ? parseFloat(newTask.special_compensation) : null,
+      notes: null
+    });
+
+    if (!validation.success) {
+      toast({ title: 'Fehler', description: validation.error, variant: 'destructive' });
       return;
     }
 
     const { error } = await supabase.from('tasks').insert({
-      title: newTask.title,
-      description: newTask.description || null,
-      customer_name: newTask.customer_name,
-      customer_phone: newTask.customer_phone || null,
-      deadline: newTask.deadline || null,
-      priority: newTask.priority,
-      special_compensation: newTask.special_compensation ? parseFloat(newTask.special_compensation) : null,
-      test_email: newTask.test_email || null,
-      test_password: newTask.test_password || null,
+      title: validation.data.title,
+      description: validation.data.description,
+      customer_name: validation.data.customer_name,
+      customer_phone: validation.data.customer_phone,
+      deadline: validation.data.deadline,
+      priority: validation.data.priority,
+      special_compensation: validation.data.special_compensation,
+      test_email: validation.data.test_email,
+      test_password: validation.data.test_password,
       created_by: user?.id
     });
 
