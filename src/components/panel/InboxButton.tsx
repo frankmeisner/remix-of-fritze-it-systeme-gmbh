@@ -35,6 +35,21 @@ export function InboxButton({ onClick }: InboxButtonProps) {
     return data.publicUrl;
   }, []);
 
+  const fetchUnreadCount = useCallback(async () => {
+    if (!user) return;
+    
+    const { count, error } = await supabase
+      .from('chat_messages')
+      .select('*', { count: 'exact', head: true })
+      .eq('recipient_id', user.id)
+      .eq('is_group_message', false)
+      .is('read_at', null);
+    
+    if (!error && count !== null) {
+      setUnreadCount(count);
+    }
+  }, [user]);
+
   useEffect(() => {
     if (user) {
       fetchUnreadCount();
@@ -82,22 +97,7 @@ export function InboxButton({ onClick }: InboxButtonProps) {
         supabase.removeChannel(channel);
       };
     }
-  }, [user, getAvatarUrl]);
-
-  const fetchUnreadCount = async () => {
-    if (!user) return;
-    
-    const { count, error } = await supabase
-      .from('chat_messages')
-      .select('*', { count: 'exact', head: true })
-      .eq('recipient_id', user.id)
-      .eq('is_group_message', false)
-      .is('read_at', null);
-    
-    if (!error && count !== null) {
-      setUnreadCount(count);
-    }
-  };
+  }, [user, getAvatarUrl, fetchUnreadCount]);
 
   const markAllAsRead = async () => {
     if (!user) return;
@@ -113,6 +113,7 @@ export function InboxButton({ onClick }: InboxButtonProps) {
 
   const handleClick = () => {
     markAllAsRead();
+    fetchUnreadCount();
     onClick();
   };
 
