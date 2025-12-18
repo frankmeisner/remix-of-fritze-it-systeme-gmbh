@@ -11,9 +11,10 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/hooks/useAuth';
-import { Plus, Calendar, User, Phone, Euro, AlertCircle, Mail, Key, Activity, MessageCircle, Radio } from 'lucide-react';
+import { Plus, Calendar, User, Phone, Euro, AlertCircle, Mail, Key, Activity, MessageCircle, Radio, CheckCircle, Clock, Archive } from 'lucide-react';
 import { format } from 'date-fns';
 import { de } from 'date-fns/locale';
+import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 
 const priorityColors: Record<TaskPriority, string> = {
   low: 'bg-slate-500/20 text-slate-700 dark:text-slate-300 border border-slate-500/30',
@@ -48,6 +49,7 @@ export default function AdminTasksView() {
   const [isAssignDialogOpen, setIsAssignDialogOpen] = useState(false);
   const [selectedTask, setSelectedTask] = useState<Task | null>(null);
   const [selectedEmployee, setSelectedEmployee] = useState('');
+  const [statusFilter, setStatusFilter] = useState<'all' | 'open' | 'in_progress' | 'completed'>('all');
   const { toast } = useToast();
   const { user } = useAuth();
 
@@ -183,9 +185,27 @@ export default function AdminTasksView() {
     return assignments.find(a => a.task_id === taskId);
   };
 
+  const getFilteredTasks = () => {
+    switch (statusFilter) {
+      case 'open':
+        return tasks.filter(t => t.status === 'pending' || t.status === 'assigned');
+      case 'in_progress':
+        return tasks.filter(t => t.status === 'in_progress' || t.status === 'sms_requested');
+      case 'completed':
+        return tasks.filter(t => t.status === 'completed' || t.status === 'cancelled');
+      default:
+        return tasks;
+    }
+  };
+
+  const openCount = tasks.filter(t => t.status === 'pending' || t.status === 'assigned').length;
+  const inProgressCount = tasks.filter(t => t.status === 'in_progress' || t.status === 'sms_requested').length;
+  const completedCount = tasks.filter(t => t.status === 'completed' || t.status === 'cancelled').length;
+  const filteredTasks = getFilteredTasks();
+
   return (
     <div className="space-y-6">
-      <div className="flex justify-between items-center">
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div className="flex items-center gap-3">
           <h2 className="text-2xl font-bold">Aufträge verwalten</h2>
           <div className="flex items-center gap-1.5 px-2 py-1 bg-emerald-500/10 rounded-full border border-emerald-500/30">
@@ -266,8 +286,33 @@ export default function AdminTasksView() {
         </Dialog>
       </div>
 
+      {/* Status Filter Tabs */}
+      <Tabs value={statusFilter} onValueChange={(v) => setStatusFilter(v as any)} className="w-full">
+        <TabsList className="grid w-full grid-cols-4 h-auto p-1">
+          <TabsTrigger value="all" className="gap-2 py-2">
+            Alle
+            <Badge variant="secondary" className="ml-1">{tasks.length}</Badge>
+          </TabsTrigger>
+          <TabsTrigger value="open" className="gap-2 py-2">
+            <Clock className="h-4 w-4" />
+            Offen
+            <Badge variant="secondary" className="ml-1 bg-muted">{openCount}</Badge>
+          </TabsTrigger>
+          <TabsTrigger value="in_progress" className="gap-2 py-2">
+            <Activity className="h-4 w-4" />
+            In Bearbeitung
+            <Badge variant="secondary" className="ml-1 bg-blue-500/20 text-blue-700 dark:text-blue-400">{inProgressCount}</Badge>
+          </TabsTrigger>
+          <TabsTrigger value="completed" className="gap-2 py-2">
+            <CheckCircle className="h-4 w-4" />
+            Abgeschlossen
+            <Badge variant="secondary" className="ml-1 bg-green-500/20 text-green-700 dark:text-green-400">{completedCount}</Badge>
+          </TabsTrigger>
+        </TabsList>
+      </Tabs>
+
       <div className="grid gap-4">
-        {tasks.map((task) => {
+        {filteredTasks.map((task) => {
           const assignee = getTaskAssignee(task.id);
           const assignment = getTaskAssignment(task.id);
           const isHighPriority = task.priority === 'high' || task.priority === 'urgent';
@@ -393,11 +438,19 @@ export default function AdminTasksView() {
             </Card>
           );
         })}
-        {tasks.length === 0 && (
+        {filteredTasks.length === 0 && (
           <Card className="shadow-card">
             <CardContent className="py-8 text-center text-muted-foreground">
               <AlertCircle className="h-12 w-12 mx-auto mb-4 opacity-50" />
-              <p>Keine Aufträge vorhanden.</p>
+              <p>
+                {statusFilter === 'all' 
+                  ? 'Keine Aufträge vorhanden.' 
+                  : statusFilter === 'open' 
+                    ? 'Keine offenen Aufträge.' 
+                    : statusFilter === 'in_progress' 
+                      ? 'Keine Aufträge in Bearbeitung.' 
+                      : 'Keine abgeschlossenen Aufträge.'}
+              </p>
             </CardContent>
           </Card>
         )}
