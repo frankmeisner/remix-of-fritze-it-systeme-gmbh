@@ -11,8 +11,12 @@ import { ClipboardList, Users, MessageSquare, Calendar, BarChart3 } from 'lucide
 export default function AdminDashboard() {
   const [activeTab, setActiveTab] = useState('tasks');
 
+  const handleLogoClick = () => {
+    setActiveTab('tasks');
+  };
+
   return (
-    <PanelLayout title="Admin-Panel">
+    <PanelLayout title="Admin-Panel" onLogoClick={handleLogoClick}>
       <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
         <TabsList className="grid w-full grid-cols-5 lg:w-auto lg:inline-flex">
           <TabsTrigger value="tasks" className="gap-2">
@@ -21,7 +25,7 @@ export default function AdminDashboard() {
           </TabsTrigger>
           <TabsTrigger value="users" className="gap-2">
             <Users className="h-4 w-4" />
-            <span className="hidden sm:inline">Benutzer</span>
+            <span className="hidden sm:inline">Mitarbeiter</span>
           </TabsTrigger>
           <TabsTrigger value="sms" className="gap-2">
             <MessageSquare className="h-4 w-4" />

@@ -11,15 +11,15 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/hooks/useAuth';
-import { Plus, Calendar, User, Phone, Euro, AlertCircle, Mail, Key, Activity } from 'lucide-react';
+import { Plus, Calendar, User, Phone, Euro, AlertCircle, Mail, Key, Activity, MessageCircle } from 'lucide-react';
 import { format } from 'date-fns';
 import { de } from 'date-fns/locale';
 
 const priorityColors: Record<TaskPriority, string> = {
   low: 'bg-slate-500/20 text-slate-700 dark:text-slate-300 border border-slate-500/30',
   medium: 'bg-yellow-500/20 text-yellow-700 dark:text-yellow-400 border border-yellow-500/30',
-  high: 'bg-orange-500/20 text-orange-700 dark:text-orange-400 border border-orange-500/30',
-  urgent: 'bg-red-500/20 text-red-700 dark:text-red-400 border border-red-500/30'
+  high: 'bg-red-500/20 text-red-700 dark:text-red-400 border border-red-500/30',
+  urgent: 'bg-red-600/30 text-red-700 dark:text-red-400 border border-red-600/50'
 };
 
 const statusColors: Record<TaskStatus, string> = {
@@ -266,9 +266,9 @@ export default function AdminTasksView() {
           const assignment = getTaskAssignment(task.id);
           return (
             <Card key={task.id} className="shadow-card overflow-hidden">
-              <div className={`h-1 ${
-                task.priority === 'urgent' ? 'bg-red-500' :
-                task.priority === 'high' ? 'bg-orange-500' :
+              <div className={`h-2 ${
+                task.priority === 'urgent' ? 'bg-red-600' :
+                task.priority === 'high' ? 'bg-red-500' :
                 task.priority === 'medium' ? 'bg-yellow-500' : 'bg-slate-400'
               }`} />
               <CardHeader className="pb-2">
@@ -346,11 +346,29 @@ export default function AdminTasksView() {
                   )}
                   {assignee && (
                     <div className="p-3 bg-emerald-500/10 border border-emerald-500/20 rounded-md">
-                      <div className="flex items-center gap-2 mb-2">
-                        <User className="h-4 w-4 text-emerald-600 dark:text-emerald-400" />
-                        <span className="font-medium text-emerald-700 dark:text-emerald-400">
-                          Zugewiesen an: {assignee.first_name} {assignee.last_name}
-                        </span>
+                      <div className="flex items-center justify-between mb-2">
+                        <div className="flex items-center gap-2">
+                          <User className="h-4 w-4 text-emerald-600 dark:text-emerald-400" />
+                          <span className="font-medium text-emerald-700 dark:text-emerald-400">
+                            Zugewiesen an: {assignee.first_name} {assignee.last_name}
+                          </span>
+                        </div>
+                        {(task.status === 'in_progress' || task.status === 'sms_requested') && (
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            className="gap-1 text-xs"
+                            onClick={() => {
+                              toast({
+                                title: 'Status angefordert',
+                                description: `Eine Statusanfrage wurde an ${assignee.first_name} gesendet.`
+                              });
+                            }}
+                          >
+                            <MessageCircle className="h-3 w-3" />
+                            Status anfragen
+                          </Button>
+                        )}
                       </div>
                       {assignment?.progress_notes && (
                         <div className="mt-2 p-2 bg-background/50 rounded text-sm">
