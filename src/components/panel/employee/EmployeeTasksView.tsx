@@ -10,6 +10,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } f
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/hooks/useAuth';
 import { useTabContext } from '@/components/panel/EmployeeDashboard';
+import { checkRateLimit, recordAttempt, formatRetryTime } from '@/lib/rate-limiter';
 import { 
   Calendar, User, Euro, AlertCircle, MessageSquare, CheckCircle2, 
   FileUp, Mail, Key, UserCheck, ArrowUpRight, HandMetal, Undo2, Clock, Trophy, PartyPopper
@@ -117,6 +118,23 @@ export default function EmployeeTasksView() {
   };
 
   const handleRequestSms = async (taskId: string) => {
+    // Rate limit SMS code requests - 1 per 5 minutes per task
+    const rateLimitKey = `sms:${user?.id}:${taskId}`;
+    const { allowed, retryAfterMs } = checkRateLimit(rateLimitKey, 'smsRequest');
+    
+    if (!allowed) {
+      const retryTime = formatRetryTime(retryAfterMs);
+      toast({ 
+        title: 'Bitte warten', 
+        description: `Du kannst in ${retryTime} erneut einen Code anfordern.`, 
+        variant: 'destructive' 
+      });
+      return;
+    }
+    
+    // Record the attempt
+    recordAttempt(rateLimitKey);
+    
     const { error } = await supabase.from('sms_code_requests').insert({
       task_id: taskId,
       user_id: user?.id

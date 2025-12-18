@@ -2,6 +2,7 @@ import { useState, useEffect, createContext, useContext, ReactNode } from 'react
 import { User, Session } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
 import { AppRole, Profile } from '@/types/panel';
+import { checkRateLimit, recordAttempt, clearAttempts, formatRetryTime } from '@/lib/rate-limiter';
 
 interface AuthContextType {
   user: User | null;
@@ -102,7 +103,27 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   const signIn = async (email: string, password: string) => {
+    // Rate limit check before attempting login
+    const rateLimitKey = `login:${email.toLowerCase()}`;
+    const { allowed, retryAfterMs } = checkRateLimit(rateLimitKey, 'login');
+    
+    if (!allowed) {
+      const retryTime = formatRetryTime(retryAfterMs);
+      return { 
+        error: new Error(`Zu viele Anmeldeversuche. Bitte versuche es in ${retryTime} erneut.`) 
+      };
+    }
+    
+    // Record the attempt before making the request
+    recordAttempt(rateLimitKey);
+    
     const { error } = await supabase.auth.signInWithPassword({ email, password });
+    
+    // Clear rate limit on successful login
+    if (!error) {
+      clearAttempts(rateLimitKey);
+    }
+    
     return { error };
   };
 
