@@ -48,12 +48,13 @@ export default function EmployeeTimeView() {
       .select('*')
       .eq('user_id', user.id)
       .gte('timestamp', today.toISOString())
-      .order('timestamp', { ascending: false });
+      .order('timestamp', { ascending: true });
 
     if (data) {
-      setEntries(data as TimeEntry[]);
-      calculateStatus(data as TimeEntry[]);
-      calculateWorkTime(data as TimeEntry[]);
+      const typedEntries = data as TimeEntry[];
+      setEntries(typedEntries);
+      calculateStatus(typedEntries);
+      calculateWorkTime(typedEntries);
     }
   };
 
@@ -63,7 +64,7 @@ export default function EmployeeTimeView() {
       return;
     }
 
-    const latestEntry = entries[0];
+    const latestEntry = entries[entries.length - 1];
     switch (latestEntry.entry_type) {
       case 'check_in':
       case 'pause_end':
@@ -79,49 +80,56 @@ export default function EmployeeTimeView() {
   };
 
   const calculateWorkTime = (entries: TimeEntry[]) => {
+    if (entries.length === 0) {
+      setTodayWorkTime(0);
+      return;
+    }
+
     let totalMs = 0;
-    const sortedEntries = [...entries].sort((a, b) => 
-      new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime()
-    );
+    let checkInTime: number | null = null;
+    let pauseStartTime: number | null = null;
+    let accumulatedPause = 0;
 
-    let checkInTime: Date | null = null;
-    let pauseStartTime: Date | null = null;
-    let pauseDuration = 0;
-
-    for (const entry of sortedEntries) {
-      const timestamp = new Date(entry.timestamp);
+    for (const entry of entries) {
+      const timestamp = new Date(entry.timestamp).getTime();
       
       switch (entry.entry_type) {
         case 'check_in':
           checkInTime = timestamp;
-          pauseDuration = 0;
+          accumulatedPause = 0;
           break;
         case 'check_out':
-          if (checkInTime) {
-            totalMs += timestamp.getTime() - checkInTime.getTime() - pauseDuration;
+          if (checkInTime !== null) {
+            const workDuration = timestamp - checkInTime - accumulatedPause;
+            totalMs += Math.max(0, workDuration);
             checkInTime = null;
+            accumulatedPause = 0;
           }
           break;
         case 'pause_start':
           pauseStartTime = timestamp;
           break;
         case 'pause_end':
-          if (pauseStartTime) {
-            pauseDuration += timestamp.getTime() - pauseStartTime.getTime();
+          if (pauseStartTime !== null) {
+            accumulatedPause += timestamp - pauseStartTime;
             pauseStartTime = null;
           }
           break;
       }
     }
 
-    // If still checked in, calculate time until now
-    if (checkInTime) {
-      const now = new Date();
-      let currentPause = 0;
-      if (pauseStartTime) {
-        currentPause = now.getTime() - pauseStartTime.getTime();
+    // If still checked in, calculate current work time
+    if (checkInTime !== null) {
+      const now = Date.now();
+      let currentPause = accumulatedPause;
+      
+      // If currently paused, add ongoing pause time
+      if (pauseStartTime !== null) {
+        currentPause += now - pauseStartTime;
       }
-      totalMs += now.getTime() - checkInTime.getTime() - pauseDuration - currentPause;
+      
+      const workDuration = now - checkInTime - currentPause;
+      totalMs += Math.max(0, workDuration);
     }
 
     setTodayWorkTime(totalMs);
@@ -150,16 +158,20 @@ export default function EmployeeTimeView() {
   };
 
   const formatTime = (ms: number) => {
+    if (ms < 0) ms = 0;
     const hours = Math.floor(ms / (1000 * 60 * 60));
     const minutes = Math.floor((ms % (1000 * 60 * 60)) / (1000 * 60));
     return `${hours}h ${minutes}m`;
   };
 
+  // Reverse for display (newest first)
+  const displayEntries = [...entries].reverse();
+
   return (
     <div className="space-y-6">
-      <h2 className="text-2xl font-bold">Zeiterfassung</h2>
+      <h2 className="text-3xl font-bold tracking-tight">Zeiterfassung</h2>
 
-      <Card className="shadow-card">
+      <Card className="shadow-lg">
         <CardHeader>
           <CardTitle className="flex items-center justify-between">
             <span>Aktueller Status</span>
@@ -174,17 +186,17 @@ export default function EmployeeTimeView() {
         </CardHeader>
         <CardContent>
           <div className="space-y-6">
-            <div className="text-center">
+            <div className="text-center py-6">
               <p className="text-sm text-muted-foreground mb-2">Arbeitszeit heute</p>
-              <p className="text-4xl font-bold flex items-center justify-center gap-2">
-                <Clock className="h-8 w-8" />
+              <p className="text-5xl font-bold flex items-center justify-center gap-3">
+                <Clock className="h-10 w-10 text-primary" />
                 {formatTime(todayWorkTime)}
               </p>
             </div>
 
             <div className="flex flex-wrap justify-center gap-3">
               {currentStatus === 'out' && (
-                <Button size="lg" onClick={() => handleTimeEntry('check_in')} className="gap-2">
+                <Button size="lg" onClick={() => handleTimeEntry('check_in')} className="gap-2 bg-green-600 hover:bg-green-700">
                   <Play className="h-5 w-5" />
                   Einstempeln
                 </Button>
@@ -203,7 +215,7 @@ export default function EmployeeTimeView() {
               )}
               {currentStatus === 'paused' && (
                 <>
-                  <Button size="lg" onClick={() => handleTimeEntry('pause_end')} className="gap-2">
+                  <Button size="lg" onClick={() => handleTimeEntry('pause_end')} className="gap-2 bg-green-600 hover:bg-green-700">
                     <Play className="h-5 w-5" />
                     Pause beenden
                   </Button>
@@ -218,17 +230,17 @@ export default function EmployeeTimeView() {
         </CardContent>
       </Card>
 
-      <Card className="shadow-card">
+      <Card className="shadow-lg">
         <CardHeader>
           <CardTitle>Heutige Einträge</CardTitle>
         </CardHeader>
         <CardContent>
           {entries.length === 0 ? (
-            <p className="text-center text-muted-foreground py-4">Keine Einträge für heute.</p>
+            <p className="text-center text-muted-foreground py-8">Keine Einträge für heute.</p>
           ) : (
             <div className="space-y-2">
-              {entries.map((entry) => (
-                <div key={entry.id} className="flex items-center justify-between p-3 bg-muted rounded-lg">
+              {displayEntries.map((entry) => (
+                <div key={entry.id} className="flex items-center justify-between p-4 bg-muted/50 rounded-lg">
                   <div className="flex items-center gap-3">
                     <div className={`p-2 rounded-full ${
                       entry.entry_type === 'check_in' ? 'bg-green-500/20 text-green-700 dark:text-green-400' :
@@ -239,7 +251,7 @@ export default function EmployeeTimeView() {
                     </div>
                     <span className="font-medium">{entryTypeLabels[entry.entry_type]}</span>
                   </div>
-                  <span className="text-sm text-muted-foreground">
+                  <span className="text-sm text-muted-foreground font-mono">
                     {format(new Date(entry.timestamp), 'HH:mm', { locale: de })} Uhr
                   </span>
                 </div>
