@@ -1,16 +1,17 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Task, TaskAssignment, TaskStatus, TaskPriority, Profile, SmsCodeRequest } from '@/types/panel';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/hooks/useAuth';
+import { useTabContext } from '@/components/panel/EmployeeDashboard';
 import { 
-  Calendar, User, Euro, AlertCircle, Play, MessageSquare, CheckCircle, 
-  Clock, FileText, Mail, Key, UserCheck, Phone
+  Calendar, User, Euro, AlertCircle, MessageSquare, CheckCircle, 
+  FileText, Mail, Key, UserCheck, Upload, HandMetal
 } from 'lucide-react';
 import { format } from 'date-fns';
 import { de } from 'date-fns/locale';
@@ -18,8 +19,8 @@ import { de } from 'date-fns/locale';
 const priorityConfig: Record<TaskPriority, { color: string; label: string; icon: string }> = {
   low: { color: 'bg-slate-500/20 text-slate-700 dark:text-slate-300 border-slate-500/30', label: 'Niedrig', icon: '○' },
   medium: { color: 'bg-yellow-500/20 text-yellow-700 dark:text-yellow-400 border-yellow-500/30', label: 'Mittel', icon: '◐' },
-  high: { color: 'bg-orange-500/20 text-orange-700 dark:text-orange-400 border-orange-500/30', label: 'Hoch', icon: '●' },
-  urgent: { color: 'bg-red-500/20 text-red-700 dark:text-red-400 border-red-500/30', label: 'Dringend', icon: '⬤' }
+  high: { color: 'bg-red-500/20 text-red-700 dark:text-red-400 border-red-500/30', label: 'Hoch', icon: '●' },
+  urgent: { color: 'bg-red-600/30 text-red-700 dark:text-red-400 border-red-600/50', label: 'Dringend', icon: '⬤' }
 };
 
 const statusConfig: Record<TaskStatus, { color: string; label: string }> = {
@@ -36,6 +37,7 @@ export default function EmployeeTasksView() {
   const [progressNotes, setProgressNotes] = useState<Record<string, string>>({});
   const { toast } = useToast();
   const { user } = useAuth();
+  const tabContext = useTabContext();
 
   useEffect(() => {
     if (user) {
@@ -90,13 +92,13 @@ export default function EmployeeTasksView() {
     }
   };
 
-  const handleStartTask = async (taskId: string) => {
+  const handleAcceptTask = async (taskId: string) => {
     await supabase.from('tasks').update({ status: 'in_progress' }).eq('id', taskId);
     await supabase.from('task_assignments').update({ 
       accepted_at: new Date().toISOString(), 
       status: 'in_progress' 
     }).eq('task_id', taskId).eq('user_id', user?.id);
-    toast({ title: 'Erfolg', description: 'Auftrag gestartet.' });
+    toast({ title: 'Erfolg', description: 'Auftrag angenommen.' });
     fetchTasks();
   };
 
@@ -133,6 +135,12 @@ export default function EmployeeTasksView() {
     toast({ title: 'Gespeichert', description: 'Notizen aktualisiert.' });
   };
 
+  const handleGoToDocuments = () => {
+    if (tabContext) {
+      tabContext.setActiveTab('documents');
+    }
+  };
+
   const activeTasks = tasks.filter(t => t.status !== 'completed' && t.status !== 'cancelled');
   const completedTasks = tasks.filter(t => t.status === 'completed');
 
@@ -160,10 +168,12 @@ export default function EmployeeTasksView() {
       ) : (
         <div className="grid gap-6">
           {activeTasks.map((task) => (
-            <Card key={task.id} className="shadow-lg overflow-hidden">
-              <div className={`h-1 ${
-                task.priority === 'urgent' ? 'bg-red-500' :
-                task.priority === 'high' ? 'bg-orange-500' :
+            <Card key={task.id} className={`shadow-lg overflow-hidden ${
+              task.priority === 'high' || task.priority === 'urgent' ? 'border-red-500/50' : ''
+            }`}>
+              <div className={`h-2 ${
+                task.priority === 'urgent' ? 'bg-red-600' :
+                task.priority === 'high' ? 'bg-red-500' :
                 task.priority === 'medium' ? 'bg-yellow-500' : 'bg-slate-400'
               }`} />
               <CardHeader className="pb-4">
@@ -262,16 +272,16 @@ export default function EmployeeTasksView() {
                       <div className="flex flex-wrap gap-3">
                         {task.status === 'assigned' && (
                           <Button 
-                            onClick={() => handleStartTask(task.id)} 
-                            className="gap-2 bg-blue-600 hover:bg-blue-700"
+                            onClick={() => handleAcceptTask(task.id)} 
+                            className="gap-2 bg-emerald-600 hover:bg-emerald-700"
                           >
-                            <Play className="h-4 w-4" />
-                            Auftrag starten
+                            <HandMetal className="h-4 w-4" />
+                            Annehmen
                           </Button>
                         )}
                         {(task.status === 'in_progress' || task.status === 'sms_requested') && (
                           <>
-                            {task.status === 'in_progress' && !task.smsRequest && (
+                            {!task.smsRequest && (
                               <Button 
                                 variant="outline" 
                                 onClick={() => handleRequestSms(task.id)} 
@@ -281,6 +291,14 @@ export default function EmployeeTasksView() {
                                 SMS anfordern
                               </Button>
                             )}
+                            <Button 
+                              onClick={handleGoToDocuments} 
+                              variant="secondary"
+                              className="gap-2"
+                            >
+                              <Upload className="h-4 w-4" />
+                              Abgabe (Dokumente)
+                            </Button>
                             <Button 
                               onClick={() => handleCompleteTask(task.id)} 
                               className="gap-2 bg-green-600 hover:bg-green-700"
