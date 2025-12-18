@@ -293,10 +293,16 @@ export default function EmployeeTasksView() {
                             {!task.smsRequest && (
                               <Button 
                                 variant="outline" 
-                                onClick={() => handleRequestSms(task.id)} 
+                                onClick={() => handleRequestSms(task.id)}
+                                className="border-purple-500/50 text-purple-600 hover:bg-purple-500/10"
                               >
-                                SMS anfordern
+                                SMS-Code Anfragen
                               </Button>
+                            )}
+                            {task.smsRequest && task.smsRequest.status === 'pending' && (
+                              <Badge className="bg-purple-500/20 text-purple-700 dark:text-purple-400 py-2 px-3">
+                                SMS-Code angefordert - warte auf Antwort...
+                              </Badge>
                             )}
                             <Button 
                               onClick={handleGoToDocuments} 

@@ -229,7 +229,10 @@ export default function AdminEmployeeDetailView({ employee, onBack }: AdminEmplo
           <div className="flex items-center gap-6">
             <Avatar className="h-24 w-24">
               {employee.avatar_url ? (
-                <AvatarImage src={employee.avatar_url} alt={`${employee.first_name} ${employee.last_name}`} />
+                <AvatarImage 
+                  src={supabase.storage.from('avatars').getPublicUrl(employee.avatar_url).data.publicUrl} 
+                  alt={`${employee.first_name} ${employee.last_name}`} 
+                />
               ) : null}
               <AvatarFallback className="bg-primary/10 text-primary text-2xl">
                 {employee.first_name?.[0]}{employee.last_name?.[0]}
@@ -371,11 +374,11 @@ export default function AdminEmployeeDetailView({ employee, onBack }: AdminEmplo
                           <Avatar className="h-8 w-8 shrink-0">
                             {isOwn ? (
                               adminProfile?.avatar_url ? (
-                                <AvatarImage src={adminProfile.avatar_url} />
+                                <AvatarImage src={supabase.storage.from('avatars').getPublicUrl(adminProfile.avatar_url).data.publicUrl} />
                               ) : null
                             ) : (
                               employee.avatar_url ? (
-                                <AvatarImage src={employee.avatar_url} />
+                                <AvatarImage src={supabase.storage.from('avatars').getPublicUrl(employee.avatar_url).data.publicUrl} />
                               ) : null
                             )}
                             <AvatarFallback className="text-xs bg-primary/10 text-primary">

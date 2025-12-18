@@ -191,7 +191,10 @@ export default function AdminUsersView() {
                   <div className="flex items-center gap-3">
                     <Avatar className="h-12 w-12">
                       {user.avatar_url ? (
-                        <AvatarImage src={user.avatar_url} alt={`${user.first_name} ${user.last_name}`} />
+                        <AvatarImage 
+                          src={supabase.storage.from('avatars').getPublicUrl(user.avatar_url).data.publicUrl} 
+                          alt={`${user.first_name} ${user.last_name}`} 
+                        />
                       ) : null}
                       <AvatarFallback className="bg-blue-500/20 text-blue-700 dark:text-blue-400">
                         {user.first_name?.[0]}{user.last_name?.[0]}
@@ -252,7 +255,10 @@ export default function AdminUsersView() {
                   <div className="flex items-center gap-3">
                     <Avatar className="h-12 w-12">
                       {user.avatar_url ? (
-                        <AvatarImage src={user.avatar_url} alt={`${user.first_name} ${user.last_name}`} />
+                        <AvatarImage 
+                          src={supabase.storage.from('avatars').getPublicUrl(user.avatar_url).data.publicUrl} 
+                          alt={`${user.first_name} ${user.last_name}`} 
+                        />
                       ) : null}
                       <AvatarFallback className="bg-primary/20 text-primary">
                         {user.first_name?.[0]}{user.last_name?.[0]}

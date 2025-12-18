@@ -37,7 +37,9 @@ export default function EmployeeDashboard() {
 
   useEffect(() => {
     if (profile?.avatar_url) {
-      setAvatarUrl(profile.avatar_url);
+      // Generate public URL from storage
+      const { data } = supabase.storage.from('avatars').getPublicUrl(profile.avatar_url);
+      setAvatarUrl(data.publicUrl);
     }
   }, [profile]);
 
@@ -54,7 +56,8 @@ export default function EmployeeDashboard() {
         filter: `user_id=eq.${profile.user_id}`
       }, (payload) => {
         if (payload.new?.avatar_url) {
-          setAvatarUrl(payload.new.avatar_url as string);
+          const { data } = supabase.storage.from('avatars').getPublicUrl(payload.new.avatar_url as string);
+          setAvatarUrl(data.publicUrl);
         }
       })
       .subscribe();

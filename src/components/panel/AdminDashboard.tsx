@@ -1,15 +1,63 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { supabase } from '@/integrations/supabase/client';
 import PanelLayout from './PanelLayout';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Badge } from '@/components/ui/badge';
 import AdminTasksView from './admin/AdminTasksView';
 import AdminUsersView from './admin/AdminUsersView';
 import AdminSmsView from './admin/AdminSmsView';
 import AdminVacationView from './admin/AdminVacationView';
 import AdminStatsView from './admin/AdminStatsView';
 import { ClipboardList, Users, MessageSquare, Calendar, BarChart3 } from 'lucide-react';
+import { useToast } from '@/hooks/use-toast';
 
 export default function AdminDashboard() {
   const [activeTab, setActiveTab] = useState('tasks');
+  const [pendingSmsCount, setPendingSmsCount] = useState(0);
+  const { toast } = useToast();
+
+  useEffect(() => {
+    fetchPendingSmsCount();
+
+    // Listen for new SMS requests
+    const channel = supabase
+      .channel('admin-sms-notifications')
+      .on('postgres_changes', { 
+        event: 'INSERT', 
+        schema: 'public', 
+        table: 'sms_code_requests' 
+      }, (payload) => {
+        if (payload.new?.status === 'pending') {
+          setPendingSmsCount(prev => prev + 1);
+          toast({
+            title: 'Neue SMS-Code Anfrage',
+            description: 'Ein Mitarbeiter hat einen SMS-Code angefordert.',
+            variant: 'default',
+          });
+        }
+      })
+      .on('postgres_changes', { 
+        event: 'UPDATE', 
+        schema: 'public', 
+        table: 'sms_code_requests' 
+      }, () => {
+        fetchPendingSmsCount();
+      })
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, []);
+
+  const fetchPendingSmsCount = async () => {
+    const { count } = await supabase
+      .from('sms_code_requests')
+      .select('*', { count: 'exact', head: true })
+      .eq('status', 'pending');
+    
+    setPendingSmsCount(count || 0);
+  };
 
   const handleLogoClick = () => {
     setActiveTab('tasks');
@@ -27,9 +75,14 @@ export default function AdminDashboard() {
             <Users className="h-4 w-4" />
             <span className="hidden sm:inline font-medium">Mitarbeiter</span>
           </TabsTrigger>
-          <TabsTrigger value="sms" className="gap-2 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-glow transition-all">
+          <TabsTrigger value="sms" className="gap-2 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-glow transition-all relative">
             <MessageSquare className="h-4 w-4" />
             <span className="hidden sm:inline font-medium">SMS-Codes</span>
+            {pendingSmsCount > 0 && (
+              <Badge className="absolute -top-2 -right-2 h-5 w-5 p-0 flex items-center justify-center bg-red-500 text-white text-xs animate-pulse">
+                {pendingSmsCount}
+              </Badge>
+            )}
           </TabsTrigger>
           <TabsTrigger value="vacation" className="gap-2 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-glow transition-all">
             <Calendar className="h-4 w-4" />
