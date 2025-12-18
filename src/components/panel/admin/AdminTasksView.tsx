@@ -140,7 +140,7 @@ export default function AdminTasksView() {
     });
 
     if (!validation.success) {
-      toast({ title: 'Fehler', description: validation.error, variant: 'destructive' });
+      toast({ title: 'Fehler', description: (validation as { success: false; error: string }).error, variant: 'destructive' });
       return;
     }
 
