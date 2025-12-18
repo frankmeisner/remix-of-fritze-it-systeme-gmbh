@@ -3,7 +3,6 @@ import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/hooks/useAuth';
@@ -35,20 +34,22 @@ export default function EmployeeProfileView() {
     if (!user) return;
     const { data } = await supabase
       .from('profiles')
-      .select('avatar_url')
+      .select('*')
       .eq('user_id', user.id)
       .single();
     
-    if (data?.avatar_url) {
-      const { data: urlData } = supabase.storage.from('avatars').getPublicUrl(data.avatar_url);
-      setAvatarUrl(urlData.publicUrl);
+    if (data) {
+      const profileData = data as any;
+      if (profileData.avatar_url) {
+        const { data: urlData } = supabase.storage.from('avatars').getPublicUrl(profileData.avatar_url);
+        setAvatarUrl(urlData.publicUrl);
+      }
     }
   };
 
   const fetchStats = async () => {
     if (!user) return;
 
-    // Get completed tasks count and compensation
     const { data: assignments } = await supabase
       .from('task_assignments')
       .select('task_id, status')
@@ -71,7 +72,6 @@ export default function EmployeeProfileView() {
       }));
     }
 
-    // Calculate work hours from time entries
     const { data: entries } = await supabase
       .from('time_entries')
       .select('*')
@@ -160,12 +160,10 @@ export default function EmployeeProfileView() {
 
       if (uploadError) throw uploadError;
 
-      const { error: updateError } = await supabase
+      await supabase
         .from('profiles')
-        .update({ avatar_url: filePath })
+        .update({ avatar_url: filePath } as any)
         .eq('user_id', user.id);
-
-      if (updateError) throw updateError;
 
       const { data: urlData } = supabase.storage.from('avatars').getPublicUrl(filePath);
       setAvatarUrl(urlData.publicUrl + '?t=' + Date.now());
@@ -180,10 +178,10 @@ export default function EmployeeProfileView() {
 
   return (
     <div className="space-y-6">
-      <h2 className="text-2xl font-bold">Mein Profil</h2>
+      <h2 className="text-3xl font-bold tracking-tight">Mein Profil</h2>
 
       <div className="grid gap-6 md:grid-cols-2">
-        <Card className="shadow-card">
+        <Card className="shadow-lg">
           <CardHeader>
             <CardTitle>Profilinformationen</CardTitle>
           </CardHeader>
@@ -229,7 +227,7 @@ export default function EmployeeProfileView() {
           </CardContent>
         </Card>
 
-        <Card className="shadow-card">
+        <Card className="shadow-lg">
           <CardHeader>
             <CardTitle>Meine Statistiken</CardTitle>
           </CardHeader>
@@ -269,7 +267,7 @@ export default function EmployeeProfileView() {
         </Card>
       </div>
 
-      <Card className="shadow-card">
+      <Card className="shadow-lg">
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <FileText className="h-5 w-5" />

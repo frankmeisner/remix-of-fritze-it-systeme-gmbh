@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import { Profile } from '@/types/panel';
+import { Profile, ChatMessage } from '@/types/panel';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -12,22 +12,12 @@ import { Send, MessageCircle, Users } from 'lucide-react';
 import { format } from 'date-fns';
 import { de } from 'date-fns/locale';
 
-interface ChatMessage {
-  id: string;
-  sender_id: string;
-  recipient_id: string | null;
-  message: string;
-  is_group_message: boolean;
-  created_at: string;
-  profile?: Profile;
-}
-
 export default function EmployeeChatView() {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [newMessage, setNewMessage] = useState('');
   const [profiles, setProfiles] = useState<Record<string, Profile>>({});
   const { toast } = useToast();
-  const { user, profile } = useAuth();
+  const { user } = useAuth();
   const scrollRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -63,15 +53,15 @@ export default function EmployeeChatView() {
   };
 
   const fetchMessages = async () => {
-    const { data } = await supabase
-      .from('chat_messages')
+    const { data, error } = await supabase
+      .from('chat_messages' as any)
       .select('*')
       .eq('is_group_message', true)
       .order('created_at', { ascending: true })
       .limit(100);
 
-    if (data) {
-      setMessages(data as ChatMessage[]);
+    if (data && !error) {
+      setMessages(data as unknown as ChatMessage[]);
     }
   };
 
@@ -79,7 +69,7 @@ export default function EmployeeChatView() {
     const { data } = await supabase.from('profiles').select('*');
     if (data) {
       const profileMap: Record<string, Profile> = {};
-      data.forEach((p: Profile) => {
+      (data as unknown as Profile[]).forEach((p) => {
         profileMap[p.user_id] = p;
       });
       setProfiles(profileMap);
@@ -89,11 +79,11 @@ export default function EmployeeChatView() {
   const handleSendMessage = async () => {
     if (!newMessage.trim() || !user) return;
 
-    const { error } = await supabase.from('chat_messages').insert({
+    const { error } = await supabase.from('chat_messages' as any).insert({
       sender_id: user.id,
       message: newMessage.trim(),
       is_group_message: true
-    });
+    } as any);
 
     if (error) {
       toast({ title: 'Fehler', description: 'Nachricht konnte nicht gesendet werden.', variant: 'destructive' });
@@ -118,7 +108,7 @@ export default function EmployeeChatView() {
 
   return (
     <div className="h-[calc(100vh-12rem)]">
-      <Card className="shadow-card h-full flex flex-col">
+      <Card className="shadow-lg h-full flex flex-col">
         <CardHeader className="pb-3 border-b">
           <CardTitle className="flex items-center gap-2">
             <Users className="h-5 w-5 text-primary" />

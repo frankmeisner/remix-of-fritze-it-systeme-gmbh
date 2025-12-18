@@ -2,6 +2,7 @@ import { ReactNode } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { ThemeToggle } from '@/components/ThemeToggle';
 import { Button } from '@/components/ui/button';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { LogOut, User } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import logo from '@/assets/logo.png';
@@ -23,19 +24,28 @@ export default function PanelLayout({ children, title }: PanelLayoutProps) {
   return (
     <div className="min-h-screen bg-background">
       <header className="sticky top-0 z-50 border-b bg-card/95 backdrop-blur supports-[backdrop-filter]:bg-card/60">
-        <div className="container flex h-16 items-center justify-between">
+        <div className="container max-w-7xl flex h-16 items-center justify-between px-4 sm:px-6 lg:px-8">
           <div className="flex items-center gap-4">
             <img src={logo} alt="Fritze IT" className="h-10" />
             <div className="hidden sm:block">
               <h1 className="text-lg font-semibold">{title}</h1>
-              <p className="text-xs text-muted-foreground capitalize">{role === 'admin' ? 'Administrator' : 'Mitarbeiter'}</p>
+              <p className="text-xs text-muted-foreground capitalize">
+                {role === 'admin' ? 'Administrator' : 'Mitarbeiter'}
+              </p>
             </div>
           </div>
           
-          <div className="flex items-center gap-3">
-            <div className="hidden md:flex items-center gap-2 text-sm text-muted-foreground">
-              <User className="h-4 w-4" />
-              <span>{profile?.first_name} {profile?.last_name}</span>
+          <div className="flex items-center gap-4">
+            <div className="hidden md:flex items-center gap-3">
+              <Avatar className="h-8 w-8">
+                <AvatarFallback className="bg-primary/10 text-primary text-sm">
+                  {profile?.first_name?.[0]}{profile?.last_name?.[0]}
+                </AvatarFallback>
+              </Avatar>
+              <div className="text-sm">
+                <p className="font-medium">{profile?.first_name} {profile?.last_name}</p>
+                <p className="text-xs text-muted-foreground">{profile?.email}</p>
+              </div>
             </div>
             <ThemeToggle />
             <Button variant="ghost" size="icon" onClick={handleSignOut} title="Abmelden">
@@ -45,7 +55,7 @@ export default function PanelLayout({ children, title }: PanelLayoutProps) {
         </div>
       </header>
       
-      <main className="container py-6">
+      <main className="container max-w-7xl py-8 px-4 sm:px-6 lg:px-8">
         {children}
       </main>
     </div>

@@ -14,8 +14,19 @@ export interface Profile {
   email: string;
   first_name: string;
   last_name: string;
+  avatar_url?: string | null;
   created_at: string;
   updated_at: string;
+}
+
+export interface ChatMessage {
+  id: string;
+  sender_id: string;
+  recipient_id: string | null;
+  message: string;
+  is_group_message: boolean;
+  created_at: string;
+  read_at: string | null;
 }
 
 export interface UserRole {

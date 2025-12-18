@@ -17,6 +17,7 @@ const documentTypes = [
   { value: 'passport', label: 'Reisepass' },
   { value: 'contract', label: 'Vertrag' },
   { value: 'certificate', label: 'Zertifikat' },
+  { value: 'task_document', label: 'Auftragsdokument' },
   { value: 'other', label: 'Sonstiges' }
 ];
 
@@ -25,7 +26,7 @@ export default function EmployeeDocumentsView() {
   const [tasks, setTasks] = useState<Task[]>([]);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [documentType, setDocumentType] = useState('other');
-  const [selectedTask, setSelectedTask] = useState<string>('');
+  const [selectedTask, setSelectedTask] = useState<string>('none');
   const [uploading, setUploading] = useState(false);
   const { toast } = useToast();
   const { user } = useAuth();
@@ -40,13 +41,13 @@ export default function EmployeeDocumentsView() {
   const fetchDocuments = async () => {
     if (!user) return;
 
-    const { data } = await supabase
+    const { data, error } = await supabase
       .from('documents')
       .select('*')
       .eq('user_id', user.id)
       .order('uploaded_at', { ascending: false });
 
-    if (data) {
+    if (data && !error) {
       setDocuments(data as Document[]);
     }
   };
@@ -106,7 +107,7 @@ export default function EmployeeDocumentsView() {
 
       const { error: dbError } = await supabase.from('documents').insert({
         user_id: user.id,
-        task_id: selectedTask || null,
+        task_id: selectedTask !== 'none' ? selectedTask : null,
         file_name: selectedFile.name,
         file_path: fileName,
         file_type: selectedFile.type,
@@ -119,7 +120,10 @@ export default function EmployeeDocumentsView() {
       toast({ title: 'Erfolg', description: 'Dokument wurde hochgeladen.' });
       setSelectedFile(null);
       setDocumentType('other');
-      setSelectedTask('');
+      setSelectedTask('none');
+      // Reset file input
+      const fileInput = document.querySelector('input[type="file"]') as HTMLInputElement;
+      if (fileInput) fileInput.value = '';
       fetchDocuments();
     } catch (error: any) {
       toast({ title: 'Fehler', description: error.message || 'Upload fehlgeschlagen.', variant: 'destructive' });
@@ -140,14 +144,19 @@ export default function EmployeeDocumentsView() {
   };
 
   const handleDownload = async (doc: Document) => {
-    const { data } = await supabase.storage.from('documents').download(doc.file_path);
-    if (data) {
-      const url = URL.createObjectURL(data);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = doc.file_name;
-      a.click();
-      URL.revokeObjectURL(url);
+    try {
+      const { data, error } = await supabase.storage.from('documents').download(doc.file_path);
+      if (error) throw error;
+      if (data) {
+        const url = URL.createObjectURL(data);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = doc.file_name;
+        a.click();
+        URL.revokeObjectURL(url);
+      }
+    } catch (error) {
+      toast({ title: 'Fehler', description: 'Download fehlgeschlagen.', variant: 'destructive' });
     }
   };
 
@@ -157,9 +166,9 @@ export default function EmployeeDocumentsView() {
 
   return (
     <div className="space-y-6">
-      <h2 className="text-2xl font-bold">Dokumente</h2>
+      <h2 className="text-3xl font-bold tracking-tight">Dokumente</h2>
 
-      <Card className="shadow-card">
+      <Card className="shadow-lg">
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <Upload className="h-5 w-5" />
@@ -173,14 +182,14 @@ export default function EmployeeDocumentsView() {
               <Input
                 type="file"
                 onChange={handleFileChange}
-                accept=".pdf,.doc,.docx,.xls,.xlsx,.jpg,.jpeg,.png"
+                className="cursor-pointer"
               />
               <p className="text-xs text-muted-foreground">
-                Erlaubt: PDF, Word, Excel, Bilder (max. 10MB)
+                Erlaubt: Alle gängigen Formate (PDF, Word, Excel, Bilder, etc.) • Max. 10MB
               </p>
             </div>
 
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label>Dokumentenart</Label>
                 <Select value={documentType} onValueChange={setDocumentType}>
@@ -204,7 +213,7 @@ export default function EmployeeDocumentsView() {
                     <SelectValue placeholder="Kein Auftrag" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="">Kein Auftrag</SelectItem>
+                    <SelectItem value="none">Kein Auftrag</SelectItem>
                     {tasks.map((task) => (
                       <SelectItem key={task.id} value={task.id}>
                         {task.title}
@@ -223,20 +232,23 @@ export default function EmployeeDocumentsView() {
         </CardContent>
       </Card>
 
-      <Card className="shadow-card">
+      <Card className="shadow-lg">
         <CardHeader>
           <CardTitle>Meine Dokumente</CardTitle>
         </CardHeader>
         <CardContent>
           {documents.length === 0 ? (
-            <div className="py-8 text-center text-muted-foreground">
-              <AlertCircle className="h-12 w-12 mx-auto mb-4 opacity-50" />
-              <p>Keine Dokumente vorhanden.</p>
+            <div className="py-12 text-center text-muted-foreground">
+              <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-muted flex items-center justify-center">
+                <AlertCircle className="h-8 w-8" />
+              </div>
+              <p className="font-medium">Keine Dokumente vorhanden.</p>
+              <p className="text-sm mt-1">Lade dein erstes Dokument hoch.</p>
             </div>
           ) : (
             <div className="space-y-3">
               {documents.map((doc) => (
-                <div key={doc.id} className="flex items-center justify-between p-4 bg-muted rounded-lg">
+                <div key={doc.id} className="flex items-center justify-between p-4 bg-muted/50 rounded-lg hover:bg-muted transition-colors">
                   <div className="flex items-center gap-3">
                     <div className="p-2 bg-primary/10 rounded">
                       <FileText className="h-5 w-5 text-primary" />
@@ -249,10 +261,10 @@ export default function EmployeeDocumentsView() {
                     </div>
                   </div>
                   <div className="flex gap-2">
-                    <Button variant="ghost" size="icon" onClick={() => handleDownload(doc)}>
+                    <Button variant="ghost" size="icon" onClick={() => handleDownload(doc)} title="Herunterladen">
                       <Download className="h-4 w-4" />
                     </Button>
-                    <Button variant="ghost" size="icon" className="text-destructive" onClick={() => handleDelete(doc)}>
+                    <Button variant="ghost" size="icon" className="text-destructive hover:text-destructive" onClick={() => handleDelete(doc)} title="Löschen">
                       <Trash2 className="h-4 w-4" />
                     </Button>
                   </div>

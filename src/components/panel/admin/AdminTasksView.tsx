@@ -11,22 +11,22 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/hooks/useAuth';
-import { Plus, Calendar, User, Phone, Euro, AlertCircle, Mail, Key } from 'lucide-react';
+import { Plus, Calendar, User, Phone, Euro, AlertCircle, Mail, Key, Activity } from 'lucide-react';
 import { format } from 'date-fns';
 import { de } from 'date-fns/locale';
 
 const priorityColors: Record<TaskPriority, string> = {
-  low: 'bg-green-500/20 text-green-700 dark:text-green-400',
-  medium: 'bg-yellow-500/20 text-yellow-700 dark:text-yellow-400',
-  high: 'bg-orange-500/20 text-orange-700 dark:text-orange-400',
-  urgent: 'bg-red-500/20 text-red-700 dark:text-red-400'
+  low: 'bg-slate-500/20 text-slate-700 dark:text-slate-300 border border-slate-500/30',
+  medium: 'bg-yellow-500/20 text-yellow-700 dark:text-yellow-400 border border-yellow-500/30',
+  high: 'bg-orange-500/20 text-orange-700 dark:text-orange-400 border border-orange-500/30',
+  urgent: 'bg-red-500/20 text-red-700 dark:text-red-400 border border-red-500/30'
 };
 
 const statusColors: Record<TaskStatus, string> = {
   pending: 'bg-gray-500/20 text-gray-700 dark:text-gray-400',
-  assigned: 'bg-blue-500/20 text-blue-700 dark:text-blue-400',
-  in_progress: 'bg-purple-500/20 text-purple-700 dark:text-purple-400',
-  sms_requested: 'bg-orange-500/20 text-orange-700 dark:text-orange-400',
+  assigned: 'bg-emerald-500/20 text-emerald-700 dark:text-emerald-400',
+  in_progress: 'bg-blue-500/20 text-blue-700 dark:text-blue-400',
+  sms_requested: 'bg-purple-500/20 text-purple-700 dark:text-purple-400',
   completed: 'bg-green-500/20 text-green-700 dark:text-green-400',
   cancelled: 'bg-red-500/20 text-red-700 dark:text-red-400'
 };
@@ -42,7 +42,7 @@ const statusLabels: Record<TaskStatus, string> = {
 
 export default function AdminTasksView() {
   const [tasks, setTasks] = useState<Task[]>([]);
-  const [assignments, setAssignments] = useState<TaskAssignment[]>([]);
+  const [assignments, setAssignments] = useState<(TaskAssignment & { progress_notes?: string })[]>([]);
   const [employees, setEmployees] = useState<Profile[]>([]);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [isAssignDialogOpen, setIsAssignDialogOpen] = useState(false);
@@ -66,6 +66,21 @@ export default function AdminTasksView() {
   useEffect(() => {
     fetchTasks();
     fetchEmployees();
+
+    // Realtime subscription for live updates
+    const channel = supabase
+      .channel('admin-tasks')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'tasks' }, () => {
+        fetchTasks();
+      })
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'task_assignments' }, () => {
+        fetchTasks();
+      })
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
   }, []);
 
   const fetchTasks = async () => {
@@ -101,7 +116,7 @@ export default function AdminTasksView() {
         .in('user_id', userIds);
 
       if (profilesData) {
-        setEmployees(profilesData as Profile[]);
+        setEmployees(profilesData as unknown as Profile[]);
       }
     }
   };
@@ -164,6 +179,10 @@ export default function AdminTasksView() {
     return employees.find(e => e.user_id === assignment.user_id);
   };
 
+  const getTaskAssignment = (taskId: string) => {
+    return assignments.find(a => a.task_id === taskId);
+  };
+
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
@@ -175,7 +194,7 @@ export default function AdminTasksView() {
               Neuer Auftrag
             </Button>
           </DialogTrigger>
-          <DialogContent className="max-w-lg">
+          <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
             <DialogHeader>
               <DialogTitle>Neuen Auftrag erstellen</DialogTitle>
             </DialogHeader>
@@ -244,19 +263,31 @@ export default function AdminTasksView() {
       <div className="grid gap-4">
         {tasks.map((task) => {
           const assignee = getTaskAssignee(task.id);
+          const assignment = getTaskAssignment(task.id);
           return (
-            <Card key={task.id} className="shadow-card">
+            <Card key={task.id} className="shadow-card overflow-hidden">
+              <div className={`h-1 ${
+                task.priority === 'urgent' ? 'bg-red-500' :
+                task.priority === 'high' ? 'bg-orange-500' :
+                task.priority === 'medium' ? 'bg-yellow-500' : 'bg-slate-400'
+              }`} />
               <CardHeader className="pb-2">
                 <div className="flex items-start justify-between">
                   <div>
                     <CardTitle className="text-lg">{task.title}</CardTitle>
-                    <div className="flex items-center gap-2 mt-2">
+                    <div className="flex items-center gap-2 mt-2 flex-wrap">
                       <Badge className={priorityColors[task.priority]}>
-                        {task.priority === 'low' ? 'Niedrig' : task.priority === 'medium' ? 'Mittel' : task.priority === 'high' ? 'Hoch' : 'Dringend'}
+                        {task.priority === 'low' ? '○ Niedrig' : task.priority === 'medium' ? '◐ Mittel' : task.priority === 'high' ? '● Hoch' : '⬤ Dringend'}
                       </Badge>
                       <Badge className={statusColors[task.status]}>
                         {statusLabels[task.status]}
                       </Badge>
+                      {task.special_compensation && (
+                        <Badge className="bg-emerald-500/20 text-emerald-700 dark:text-emerald-400 border border-emerald-500/30">
+                          <Euro className="h-3 w-3 mr-1" />
+                          {task.special_compensation.toFixed(2)} €
+                        </Badge>
+                      )}
                     </div>
                   </div>
                   {!assignee && task.status === 'pending' && (
@@ -274,9 +305,9 @@ export default function AdminTasksView() {
                 </div>
               </CardHeader>
               <CardContent>
-                <div className="space-y-2 text-sm text-muted-foreground">
-                  {task.description && <p>{task.description}</p>}
-                  <div className="flex flex-wrap gap-4 mt-3">
+                <div className="space-y-3 text-sm">
+                  {task.description && <p className="text-muted-foreground">{task.description}</p>}
+                  <div className="flex flex-wrap gap-4 text-muted-foreground">
                     <span className="flex items-center gap-1">
                       <User className="h-4 w-4" />
                       {task.customer_name}
@@ -293,16 +324,10 @@ export default function AdminTasksView() {
                         {format(new Date(task.deadline), 'dd.MM.yyyy HH:mm', { locale: de })}
                       </span>
                     )}
-                    {task.special_compensation && (
-                      <span className="flex items-center gap-1">
-                        <Euro className="h-4 w-4" />
-                        {task.special_compensation.toFixed(2)} €
-                      </span>
-                    )}
                   </div>
                   {(task.test_email || task.test_password) && (
-                    <div className="mt-3 p-3 bg-muted/50 border border-border rounded-md">
-                      <p className="text-xs font-medium mb-2 text-muted-foreground">Test-Zugangsdaten</p>
+                    <div className="p-3 bg-blue-500/10 border border-blue-500/20 rounded-md">
+                      <p className="text-xs font-medium mb-2 text-blue-700 dark:text-blue-400">Test-Zugangsdaten</p>
                       <div className="flex flex-wrap gap-4">
                         {task.test_email && (
                           <span className="flex items-center gap-1 text-sm">
@@ -320,8 +345,22 @@ export default function AdminTasksView() {
                     </div>
                   )}
                   {assignee && (
-                    <div className="mt-3 p-2 bg-muted rounded-md">
-                      <span className="font-medium">Zugewiesen an:</span> {assignee.first_name} {assignee.last_name}
+                    <div className="p-3 bg-emerald-500/10 border border-emerald-500/20 rounded-md">
+                      <div className="flex items-center gap-2 mb-2">
+                        <User className="h-4 w-4 text-emerald-600 dark:text-emerald-400" />
+                        <span className="font-medium text-emerald-700 dark:text-emerald-400">
+                          Zugewiesen an: {assignee.first_name} {assignee.last_name}
+                        </span>
+                      </div>
+                      {assignment?.progress_notes && (
+                        <div className="mt-2 p-2 bg-background/50 rounded text-sm">
+                          <div className="flex items-center gap-1 text-xs text-muted-foreground mb-1">
+                            <Activity className="h-3 w-3" />
+                            Mitarbeiter-Notizen:
+                          </div>
+                          <p>{assignment.progress_notes}</p>
+                        </div>
+                      )}
                     </div>
                   )}
                 </div>

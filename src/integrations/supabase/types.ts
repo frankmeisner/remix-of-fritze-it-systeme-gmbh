@@ -14,6 +14,36 @@ export type Database = {
   }
   public: {
     Tables: {
+      chat_messages: {
+        Row: {
+          created_at: string
+          id: string
+          is_group_message: boolean | null
+          message: string
+          read_at: string | null
+          recipient_id: string | null
+          sender_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          is_group_message?: boolean | null
+          message: string
+          read_at?: string | null
+          recipient_id?: string | null
+          sender_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          is_group_message?: boolean | null
+          message?: string
+          read_at?: string | null
+          recipient_id?: string | null
+          sender_id?: string
+        }
+        Relationships: []
+      }
       documents: {
         Row: {
           document_type: string | null
@@ -60,6 +90,7 @@ export type Database = {
       }
       profiles: {
         Row: {
+          avatar_url: string | null
           created_at: string
           email: string
           first_name: string
@@ -69,6 +100,7 @@ export type Database = {
           user_id: string
         }
         Insert: {
+          avatar_url?: string | null
           created_at?: string
           email: string
           first_name: string
@@ -78,6 +110,7 @@ export type Database = {
           user_id: string
         }
         Update: {
+          avatar_url?: string | null
           created_at?: string
           email?: string
           first_name?: string
