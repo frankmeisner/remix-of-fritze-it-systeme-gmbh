@@ -305,7 +305,17 @@ export default function EmployeeTasksView() {
                             size="lg"
                             className="bg-emerald-600 hover:bg-emerald-700 text-white font-semibold shadow-lg hover:shadow-xl transition-all"
                           >
-                            Auftrag übernehmen
+                            Auftrag annehmen
+                          </Button>
+                        )}
+                        {task.assignment?.accepted_at && (
+                          <Button 
+                            disabled
+                            size="lg"
+                            className="bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400 border border-emerald-300 dark:border-emerald-700 cursor-default opacity-100"
+                          >
+                            <CheckCircle2 className="h-4 w-4 mr-2" />
+                            Angenommen
                           </Button>
                         )}
                         {(task.status === 'in_progress' || task.status === 'sms_requested') && (
@@ -330,21 +340,14 @@ export default function EmployeeTasksView() {
                               className="gap-2"
                             >
                               <FileUp className="h-4 w-4" />
-                              Abgabe (Dokumente)
+                              Dokumente hochladen
                             </Button>
                             <Button 
                               onClick={() => handleCompleteTask(task)} 
                               className="bg-green-600 hover:bg-green-700 gap-2"
                             >
                               <CheckCircle2 className="h-4 w-4" />
-                              Auftrag abschließen
-                            </Button>
-                            <Button 
-                              variant="outline"
-                              onClick={() => handleReturnTask(task.id)} 
-                              className="border-orange-500/50 text-orange-600 hover:bg-orange-500/10"
-                            >
-                              Auftrag abgeben
+                              Abgeben
                             </Button>
                           </>
                         )}
