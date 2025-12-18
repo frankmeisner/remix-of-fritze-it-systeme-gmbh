@@ -29,6 +29,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         setUser(session?.user ?? null);
 
         if (session?.user) {
+          // Ensure dashboards never render with half-loaded auth state
+          setLoading(true);
           setTimeout(() => {
             fetchUserData(session.user.id);
           }, 0);
@@ -44,6 +46,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setSession(session);
       setUser(session?.user ?? null);
       if (session?.user) {
+        setLoading(true);
         fetchUserData(session.user.id);
       } else {
         setLoading(false);
