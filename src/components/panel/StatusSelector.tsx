@@ -92,6 +92,8 @@ export function StatusSelector() {
     
     if (!error) {
       setStatus(newStatus);
+      // Reload page after status change
+      window.location.reload();
     }
   };
 

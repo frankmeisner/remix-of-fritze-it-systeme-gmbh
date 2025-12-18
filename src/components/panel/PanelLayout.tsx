@@ -53,7 +53,7 @@ export default function PanelLayout({ children, title, onLogoClick, headerAction
                 <img 
                   src={logo} 
                   alt="Fritze IT" 
-                  className="h-10 transition-transform group-hover:scale-105" 
+                  className="h-12 w-auto transition-transform group-hover:scale-105" 
                 />
                 <div className="absolute inset-0 bg-primary/20 blur-xl opacity-0 group-hover:opacity-100 transition-opacity rounded-full" />
               </div>

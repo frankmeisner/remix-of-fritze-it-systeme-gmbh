@@ -181,41 +181,41 @@ export default function EmployeeDashboard() {
       <div className="min-h-screen bg-background flex">
         {/* Sidebar */}
         <aside className={cn(
-          "fixed inset-y-0 left-0 z-50 flex flex-col bg-card border-r border-border transition-all duration-300",
+          "fixed inset-y-0 left-0 z-50 flex flex-col bg-card/95 backdrop-blur-xl border-r border-border/50 transition-all duration-300 shadow-xl",
           sidebarOpen ? "w-64" : "w-0 md:w-16"
         )}>
           {/* Logo */}
           <div className={cn(
-            "h-16 flex items-center border-b border-border px-4",
+            "h-20 flex items-center border-b border-border/30 px-4",
             !sidebarOpen && "md:justify-center md:px-2"
           )}>
             <div 
               className="flex items-center gap-3 cursor-pointer hover:opacity-80 transition-all"
               onClick={handleLogoClick}
             >
-              <img src={logo} alt="Logo" className="h-8" />
+              <img src={logo} alt="Logo" className="h-12 w-auto" />
               {sidebarOpen && (
-                <span className="font-bold text-lg">Mitarbeiter</span>
+                <span className="font-bold text-lg bg-gradient-to-r from-primary to-primary/70 bg-clip-text text-transparent">Mitarbeiter</span>
               )}
             </div>
           </div>
 
           {/* Navigation */}
-          <nav className="flex-1 py-4 overflow-y-auto">
-            <ul className="space-y-1 px-2">
+          <nav className="flex-1 py-6 overflow-y-auto">
+            <ul className="space-y-1.5 px-3">
               {menuItems.map((item) => (
                 <li key={item.id}>
                   <button
                     onClick={() => setActiveTab(item.id)}
                     className={cn(
-                      "w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-left transition-all",
+                      "w-full flex items-center gap-3 px-4 py-3 rounded-xl text-left transition-all duration-200",
                       activeTab === item.id 
-                        ? "bg-primary text-primary-foreground shadow-md" 
-                        : "hover:bg-muted text-muted-foreground hover:text-foreground",
+                        ? "bg-primary text-primary-foreground shadow-lg shadow-primary/25" 
+                        : "hover:bg-muted/80 text-muted-foreground hover:text-foreground",
                       !sidebarOpen && "md:justify-center md:px-2"
                     )}
                   >
-                    <item.icon className="h-5 w-5 shrink-0" />
+                    <item.icon className={cn("h-5 w-5 shrink-0", activeTab === item.id && "animate-pulse")} />
                     {sidebarOpen && <span className="font-medium">{item.label}</span>}
                   </button>
                 </li>
@@ -225,10 +225,10 @@ export default function EmployeeDashboard() {
 
           {/* User info at bottom */}
           {sidebarOpen && (
-            <div className="p-4 border-t border-border">
+            <div className="p-4 border-t border-border/30 bg-muted/30">
               <div className="flex items-center gap-3">
                 <div className="relative">
-                  <Avatar className="h-10 w-10 ring-2 ring-primary/20">
+                  <Avatar className="h-11 w-11 ring-2 ring-primary/30 shadow-lg">
                     {avatarUrl ? (
                       <AvatarImage src={avatarUrl} alt={`${profile?.first_name} ${profile?.last_name}`} />
                     ) : null}
@@ -236,10 +236,10 @@ export default function EmployeeDashboard() {
                       {profile?.first_name?.[0]}{profile?.last_name?.[0]}
                     </AvatarFallback>
                   </Avatar>
-                  <span className={`absolute bottom-0 right-0 h-3 w-3 rounded-full border-2 border-card ${statusColors[userStatus]}`} />
+                  <span className={`absolute bottom-0.5 right-0.5 h-3 w-3 rounded-full border-2 border-card ${statusColors[userStatus]} shadow-sm`} />
                 </div>
                 <div className="flex-1 min-w-0">
-                  <p className="font-medium text-sm truncate">{profile?.first_name} {profile?.last_name}</p>
+                  <p className="font-semibold text-sm truncate">{profile?.first_name} {profile?.last_name}</p>
                   <p className="text-xs text-muted-foreground truncate">{profile?.email}</p>
                 </div>
               </div>

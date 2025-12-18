@@ -6,14 +6,15 @@ import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/hooks/useAuth';
 import { useTabContext } from '@/components/panel/EmployeeDashboard';
 import { 
   Calendar, User, Euro, AlertCircle, MessageSquare, CheckCircle2, 
-  FileUp, Mail, Key, UserCheck, ArrowUpRight, HandMetal, Undo2
+  FileUp, Mail, Key, UserCheck, ArrowUpRight, HandMetal, Undo2, Clock, Trophy, PartyPopper
 } from 'lucide-react';
-import { format } from 'date-fns';
+import { format, formatDistanceStrict } from 'date-fns';
 import { de } from 'date-fns/locale';
 
 const priorityConfig: Record<TaskPriority, { color: string; label: string; icon: string }> = {
@@ -35,6 +36,11 @@ const statusConfig: Record<TaskStatus, { color: string; label: string }> = {
 export default function EmployeeTasksView() {
   const [tasks, setTasks] = useState<(Task & { assignment?: TaskAssignment; assignedBy?: Profile; smsRequest?: SmsCodeRequest })[]>([]);
   const [progressNotes, setProgressNotes] = useState<Record<string, string>>({});
+  const [completionDialog, setCompletionDialog] = useState<{
+    open: boolean;
+    task: (Task & { assignment?: TaskAssignment }) | null;
+    duration: string;
+  }>({ open: false, task: null, duration: '' });
   const { toast } = useToast();
   const { user } = useAuth();
   const tabContext = useTabContext();
@@ -125,14 +131,28 @@ export default function EmployeeTasksView() {
     }
   };
 
-  const handleCompleteTask = async (taskId: string) => {
-    const notes = progressNotes[taskId] || '';
-    await supabase.from('tasks').update({ status: 'completed' }).eq('id', taskId);
+  const handleCompleteTask = async (task: Task & { assignment?: TaskAssignment }) => {
+    // Calculate duration since task was accepted
+    const acceptedAt = task.assignment?.accepted_at || task.assignment?.assigned_at;
+    let duration = 'Unbekannt';
+    if (acceptedAt) {
+      duration = formatDistanceStrict(new Date(acceptedAt), new Date(), { locale: de });
+    }
+    
+    const notes = progressNotes[task.id] || '';
+    await supabase.from('tasks').update({ status: 'completed' }).eq('id', task.id);
     await supabase.from('task_assignments').update({ 
       status: 'completed', 
       progress_notes: notes 
-    }).eq('task_id', taskId).eq('user_id', user?.id);
-    toast({ title: 'Erfolg', description: 'Auftrag abgeschlossen!' });
+    }).eq('task_id', task.id).eq('user_id', user?.id);
+    
+    // Show completion dialog with stats and praise
+    setCompletionDialog({
+      open: true,
+      task,
+      duration
+    });
+    
     fetchTasks();
   };
 
@@ -307,13 +327,16 @@ export default function EmployeeTasksView() {
                             <Button 
                               onClick={handleGoToDocuments} 
                               variant="neon"
+                              className="gap-2"
                             >
+                              <FileUp className="h-4 w-4" />
                               Abgabe (Dokumente)
                             </Button>
                             <Button 
-                              onClick={() => handleCompleteTask(task.id)} 
-                              className="bg-green-600 hover:bg-green-700"
+                              onClick={() => handleCompleteTask(task)} 
+                              className="bg-green-600 hover:bg-green-700 gap-2"
                             >
+                              <CheckCircle2 className="h-4 w-4" />
                               Auftrag abschließen
                             </Button>
                             <Button 
@@ -340,6 +363,73 @@ export default function EmployeeTasksView() {
           )})}
         </div>
       )}
+
+      {/* Completion Dialog with Stats and Praise */}
+      <Dialog open={completionDialog.open} onOpenChange={(open) => setCompletionDialog({ ...completionDialog, open })}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2 text-2xl">
+              <PartyPopper className="h-6 w-6 text-yellow-500" />
+              Hervorragende Arbeit!
+            </DialogTitle>
+            <DialogDescription>
+              Du hast den Auftrag erfolgreich abgeschlossen
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-6 py-4">
+            <div className="text-center">
+              <div className="mx-auto w-20 h-20 bg-gradient-to-br from-green-400 to-emerald-600 rounded-full flex items-center justify-center mb-4 shadow-lg shadow-green-500/30">
+                <Trophy className="h-10 w-10 text-white" />
+              </div>
+              <h3 className="text-xl font-bold">{completionDialog.task?.title}</h3>
+              <p className="text-muted-foreground">{completionDialog.task?.customer_name}</p>
+            </div>
+            
+            <div className="p-4 bg-muted/50 rounded-xl space-y-3">
+              <div className="flex items-center justify-between">
+                <span className="text-muted-foreground flex items-center gap-2">
+                  <Clock className="h-4 w-4" />
+                  Bearbeitungszeit
+                </span>
+                <span className="font-bold text-lg">{completionDialog.duration}</span>
+              </div>
+              {completionDialog.task?.special_compensation && completionDialog.task.special_compensation > 0 && (
+                <div className="flex items-center justify-between">
+                  <span className="text-muted-foreground flex items-center gap-2">
+                    <Euro className="h-4 w-4" />
+                    Sondervergütung
+                  </span>
+                  <span className="font-bold text-lg text-emerald-600">{completionDialog.task.special_compensation.toFixed(2)} €</span>
+                </div>
+              )}
+            </div>
+            
+            <div className="text-center space-y-2">
+              <p className="text-sm text-muted-foreground">
+                Vergiss nicht, deine Dokumente hochzuladen!
+              </p>
+              <div className="flex gap-2 justify-center">
+                <Button
+                  variant="outline"
+                  onClick={() => setCompletionDialog({ ...completionDialog, open: false })}
+                >
+                  Schließen
+                </Button>
+                <Button
+                  onClick={() => {
+                    setCompletionDialog({ ...completionDialog, open: false });
+                    handleGoToDocuments();
+                  }}
+                  className="bg-primary gap-2"
+                >
+                  <FileUp className="h-4 w-4" />
+                  Dokumente hochladen
+                </Button>
+              </div>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

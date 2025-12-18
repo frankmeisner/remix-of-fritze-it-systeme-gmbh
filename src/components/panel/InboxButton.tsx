@@ -111,9 +111,9 @@ export function InboxButton({ onClick }: InboxButtonProps) {
     setUnreadCount(0);
   };
 
-  const handleClick = () => {
-    markAllAsRead();
-    fetchUnreadCount();
+  const handleClick = async () => {
+    await markAllAsRead();
+    setUnreadCount(0); // Immediately set to 0 after marking as read
     onClick();
   };
 
