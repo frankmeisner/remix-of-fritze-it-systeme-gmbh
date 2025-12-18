@@ -3,7 +3,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { ThemeToggle } from '@/components/ThemeToggle';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { LogOut } from 'lucide-react';
+import { LogOut, LayoutGrid } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import logo from '@/assets/logo.png';
 
@@ -32,47 +32,62 @@ export default function PanelLayout({ children, title, onLogoClick }: PanelLayou
 
   return (
     <div className="min-h-screen bg-background">
-      <header className="sticky top-0 z-50 border-b bg-card/95 backdrop-blur supports-[backdrop-filter]:bg-card/60">
+      {/* Header with glassmorphism */}
+      <header className="sticky top-0 z-50 glass border-b border-border/50">
         <div className="container max-w-7xl flex h-16 items-center justify-between px-4 sm:px-6 lg:px-8">
           <div className="flex items-center gap-4">
-            <img 
-              src={logo} 
-              alt="Fritze IT" 
-              className="h-10 cursor-pointer hover:opacity-80 transition-opacity" 
+            <div 
+              className="flex items-center gap-3 cursor-pointer hover:opacity-80 transition-all group"
               onClick={handleLogoClick}
-            />
-            <div className="hidden sm:block">
-              <h1 className="text-lg font-semibold">{title}</h1>
-              <p className="text-xs text-muted-foreground capitalize">
-                {role === 'admin' ? 'Administrator' : 'Mitarbeiter'}
-              </p>
+            >
+              <div className="relative">
+                <img 
+                  src={logo} 
+                  alt="Fritze IT" 
+                  className="h-10 transition-transform group-hover:scale-105" 
+                />
+                <div className="absolute inset-0 bg-primary/20 blur-xl opacity-0 group-hover:opacity-100 transition-opacity rounded-full" />
+              </div>
+              <div className="hidden sm:block">
+                <h1 className="text-lg font-bold tracking-tight">{title}</h1>
+                <p className="text-xs text-muted-foreground flex items-center gap-1">
+                  <LayoutGrid className="h-3 w-3" />
+                  {role === 'admin' ? 'Administrator' : 'Mitarbeiter'}
+                </p>
+              </div>
             </div>
           </div>
           
-          <div className="flex items-center gap-4">
-            <div className="hidden md:flex items-center gap-3">
-              <Avatar className="h-8 w-8">
+          <div className="flex items-center gap-3">
+            <div className="hidden md:flex items-center gap-3 px-4 py-2 glass-panel rounded-xl">
+              <Avatar className="h-9 w-9 ring-2 ring-primary/20">
                 {avatarUrl ? (
                   <AvatarImage src={avatarUrl} alt={`${profile?.first_name} ${profile?.last_name}`} />
                 ) : null}
-                <AvatarFallback className="bg-primary/10 text-primary text-sm">
+                <AvatarFallback className="bg-primary/10 text-primary text-sm font-semibold">
                   {profile?.first_name?.[0]}{profile?.last_name?.[0]}
                 </AvatarFallback>
               </Avatar>
               <div className="text-sm">
-                <p className="font-medium">{profile?.first_name} {profile?.last_name}</p>
+                <p className="font-semibold">{profile?.first_name} {profile?.last_name}</p>
                 <p className="text-xs text-muted-foreground">{profile?.email}</p>
               </div>
             </div>
             <ThemeToggle />
-            <Button variant="ghost" size="icon" onClick={handleSignOut} title="Abmelden">
+            <Button 
+              variant="ghost" 
+              size="icon" 
+              onClick={handleSignOut} 
+              title="Abmelden"
+              className="hover:bg-destructive/10 hover:text-destructive transition-colors"
+            >
               <LogOut className="h-4 w-4" />
             </Button>
           </div>
         </div>
       </header>
       
-      <main className="container max-w-7xl py-8 px-4 sm:px-6 lg:px-8">
+      <main className="container max-w-7xl py-8 px-4 sm:px-6 lg:px-8 animate-fade-in">
         {children}
       </main>
     </div>

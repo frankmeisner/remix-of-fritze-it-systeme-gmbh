@@ -18,17 +18,17 @@ import { de } from 'date-fns/locale';
 const priorityColors: Record<TaskPriority, string> = {
   low: 'bg-slate-500/20 text-slate-700 dark:text-slate-300 border border-slate-500/30',
   medium: 'bg-yellow-500/20 text-yellow-700 dark:text-yellow-400 border border-yellow-500/30',
-  high: 'bg-red-500/20 text-red-700 dark:text-red-400 border border-red-500/30',
-  urgent: 'bg-red-600/30 text-red-700 dark:text-red-400 border border-red-600/50'
+  high: 'bg-red-600/30 text-red-200 dark:text-red-300 border border-red-500/50 font-bold',
+  urgent: 'bg-red-700/40 text-red-100 dark:text-red-200 border border-red-600/60 font-bold animate-pulse'
 };
 
 const statusColors: Record<TaskStatus, string> = {
-  pending: 'bg-gray-500/20 text-gray-700 dark:text-gray-400',
+  pending: 'bg-muted text-muted-foreground',
   assigned: 'bg-emerald-500/20 text-emerald-700 dark:text-emerald-400',
   in_progress: 'bg-blue-500/20 text-blue-700 dark:text-blue-400',
   sms_requested: 'bg-purple-500/20 text-purple-700 dark:text-purple-400',
   completed: 'bg-green-500/20 text-green-700 dark:text-green-400',
-  cancelled: 'bg-red-500/20 text-red-700 dark:text-red-400'
+  cancelled: 'bg-destructive/20 text-destructive'
 };
 
 const statusLabels: Record<TaskStatus, string> = {
@@ -264,12 +264,13 @@ export default function AdminTasksView() {
         {tasks.map((task) => {
           const assignee = getTaskAssignee(task.id);
           const assignment = getTaskAssignment(task.id);
+          const isHighPriority = task.priority === 'high' || task.priority === 'urgent';
           return (
-            <Card key={task.id} className="shadow-card overflow-hidden">
-              <div className={`h-2 ${
-                task.priority === 'urgent' ? 'bg-red-600' :
-                task.priority === 'high' ? 'bg-red-500' :
-                task.priority === 'medium' ? 'bg-yellow-500' : 'bg-slate-400'
+            <Card key={task.id} className={`glass-card overflow-hidden transition-all hover:shadow-glow ${isHighPriority ? 'neon-border' : ''}`}>
+              <div className={`h-1.5 ${
+                task.priority === 'urgent' ? 'bg-gradient-to-r from-red-600 via-red-500 to-red-600 animate-pulse' :
+                task.priority === 'high' ? 'bg-gradient-to-r from-red-500 to-red-600' :
+                task.priority === 'medium' ? 'bg-gradient-to-r from-yellow-500 to-amber-500' : 'bg-muted'
               }`} />
               <CardHeader className="pb-2">
                 <div className="flex items-start justify-between">

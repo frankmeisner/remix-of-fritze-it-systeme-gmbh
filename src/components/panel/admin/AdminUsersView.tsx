@@ -183,7 +183,7 @@ export default function AdminUsersView() {
           {employees.map((user) => (
             <Card 
               key={user.id} 
-              className="shadow-card cursor-pointer hover:shadow-lg transition-shadow border-2 hover:border-primary/50"
+              className="glass-card cursor-pointer hover:shadow-glow transition-all border-2 hover:border-primary/50"
               onClick={() => setSelectedEmployee(user)}
             >
               <CardHeader className="pb-2">
@@ -246,7 +246,7 @@ export default function AdminUsersView() {
         </h3>
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
           {admins.map((user) => (
-            <Card key={user.id} className="shadow-card">
+            <Card key={user.id} className="glass-card">
               <CardHeader className="pb-2">
                 <div className="flex items-start justify-between">
                   <div className="flex items-center gap-3">

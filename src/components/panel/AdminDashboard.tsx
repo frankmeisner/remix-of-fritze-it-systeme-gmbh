@@ -18,26 +18,26 @@ export default function AdminDashboard() {
   return (
     <PanelLayout title="Admin-Panel" onLogoClick={handleLogoClick}>
       <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-        <TabsList className="grid w-full grid-cols-5 lg:w-auto lg:inline-flex">
-          <TabsTrigger value="tasks" className="gap-2">
+        <TabsList className="glass-panel grid w-full grid-cols-5 lg:w-auto lg:inline-flex p-1.5 gap-1">
+          <TabsTrigger value="tasks" className="gap-2 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-glow transition-all">
             <ClipboardList className="h-4 w-4" />
-            <span className="hidden sm:inline">Aufträge</span>
+            <span className="hidden sm:inline font-medium">Aufträge</span>
           </TabsTrigger>
-          <TabsTrigger value="users" className="gap-2">
+          <TabsTrigger value="users" className="gap-2 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-glow transition-all">
             <Users className="h-4 w-4" />
-            <span className="hidden sm:inline">Mitarbeiter</span>
+            <span className="hidden sm:inline font-medium">Mitarbeiter</span>
           </TabsTrigger>
-          <TabsTrigger value="sms" className="gap-2">
+          <TabsTrigger value="sms" className="gap-2 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-glow transition-all">
             <MessageSquare className="h-4 w-4" />
-            <span className="hidden sm:inline">SMS-Codes</span>
+            <span className="hidden sm:inline font-medium">SMS-Codes</span>
           </TabsTrigger>
-          <TabsTrigger value="vacation" className="gap-2">
+          <TabsTrigger value="vacation" className="gap-2 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-glow transition-all">
             <Calendar className="h-4 w-4" />
-            <span className="hidden sm:inline">Anträge</span>
+            <span className="hidden sm:inline font-medium">Anträge</span>
           </TabsTrigger>
-          <TabsTrigger value="stats" className="gap-2">
+          <TabsTrigger value="stats" className="gap-2 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-glow transition-all">
             <BarChart3 className="h-4 w-4" />
-            <span className="hidden sm:inline">Statistik</span>
+            <span className="hidden sm:inline font-medium">Statistik</span>
           </TabsTrigger>
         </TabsList>
 

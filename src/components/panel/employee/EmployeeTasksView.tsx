@@ -10,8 +10,8 @@ import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/hooks/useAuth';
 import { useTabContext } from '@/components/panel/EmployeeDashboard';
 import { 
-  Calendar, User, Euro, AlertCircle, MessageSquare, CheckCircle, 
-  FileText, Mail, Key, UserCheck, Upload, HandMetal
+  Calendar, User, Euro, AlertCircle, MessageSquare, CheckCircle2, 
+  FileUp, Mail, Key, UserCheck, ArrowUpRight, Sparkles
 } from 'lucide-react';
 import { format } from 'date-fns';
 import { de } from 'date-fns/locale';
@@ -19,8 +19,8 @@ import { de } from 'date-fns/locale';
 const priorityConfig: Record<TaskPriority, { color: string; label: string; icon: string }> = {
   low: { color: 'bg-slate-500/20 text-slate-700 dark:text-slate-300 border-slate-500/30', label: 'Niedrig', icon: '○' },
   medium: { color: 'bg-yellow-500/20 text-yellow-700 dark:text-yellow-400 border-yellow-500/30', label: 'Mittel', icon: '◐' },
-  high: { color: 'bg-red-500/20 text-red-700 dark:text-red-400 border-red-500/30', label: 'Hoch', icon: '●' },
-  urgent: { color: 'bg-red-600/30 text-red-700 dark:text-red-400 border-red-600/50', label: 'Dringend', icon: '⬤' }
+  high: { color: 'bg-red-600/30 text-red-200 dark:text-red-300 border-red-500/50 font-bold', label: 'Hoch', icon: '●' },
+  urgent: { color: 'bg-red-700/40 text-red-100 dark:text-red-200 border-red-600/60 font-bold', label: 'Dringend', icon: '⬤' }
 };
 
 const statusConfig: Record<TaskStatus, { color: string; label: string }> = {
@@ -167,14 +167,16 @@ export default function EmployeeTasksView() {
         </Card>
       ) : (
         <div className="grid gap-6">
-          {activeTasks.map((task) => (
-            <Card key={task.id} className={`shadow-lg overflow-hidden ${
-              task.priority === 'high' || task.priority === 'urgent' ? 'border-red-500/50' : ''
+          {activeTasks.map((task) => {
+            const isHighPriority = task.priority === 'high' || task.priority === 'urgent';
+            return (
+            <Card key={task.id} className={`glass-card overflow-hidden transition-all hover:shadow-glow ${
+              isHighPriority ? 'neon-border' : ''
             }`}>
-              <div className={`h-2 ${
-                task.priority === 'urgent' ? 'bg-red-600' :
-                task.priority === 'high' ? 'bg-red-500' :
-                task.priority === 'medium' ? 'bg-yellow-500' : 'bg-slate-400'
+              <div className={`h-1.5 ${
+                task.priority === 'urgent' ? 'bg-gradient-to-r from-red-600 via-red-500 to-red-600 animate-pulse' :
+                task.priority === 'high' ? 'bg-gradient-to-r from-red-500 to-red-600' :
+                task.priority === 'medium' ? 'bg-gradient-to-r from-yellow-500 to-amber-500' : 'bg-muted'
               }`} />
               <CardHeader className="pb-4">
                 <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
@@ -275,7 +277,7 @@ export default function EmployeeTasksView() {
                             onClick={() => handleAcceptTask(task.id)} 
                             className="gap-2 bg-emerald-600 hover:bg-emerald-700"
                           >
-                            <HandMetal className="h-4 w-4" />
+                            <Sparkles className="h-4 w-4" />
                             Annehmen
                           </Button>
                         )}
@@ -293,27 +295,27 @@ export default function EmployeeTasksView() {
                             )}
                             <Button 
                               onClick={handleGoToDocuments} 
-                              variant="secondary"
+                              variant="neon"
                               className="gap-2"
                             >
-                              <Upload className="h-4 w-4" />
+                              <FileUp className="h-4 w-4" />
                               Abgabe (Dokumente)
                             </Button>
                             <Button 
                               onClick={() => handleCompleteTask(task.id)} 
                               className="gap-2 bg-green-600 hover:bg-green-700"
                             >
-                              <CheckCircle className="h-4 w-4" />
+                              <CheckCircle2 className="h-4 w-4" />
                               Auftrag abschließen
                             </Button>
                           </>
                         )}
                         <Button 
-                          variant="secondary" 
+                          variant="glass" 
                           onClick={() => handleUpdateNotes(task.id)}
                           className="gap-2"
                         >
-                          <FileText className="h-4 w-4" />
+                          <ArrowUpRight className="h-4 w-4" />
                           Notizen speichern
                         </Button>
                       </div>
@@ -322,7 +324,7 @@ export default function EmployeeTasksView() {
                 )}
               </CardContent>
             </Card>
-          ))}
+          )})}
         </div>
       )}
     </div>
