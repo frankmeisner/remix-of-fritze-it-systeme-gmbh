@@ -89,10 +89,10 @@ function SmsCodeDisplay({
 }
 
 const priorityConfig: Record<TaskPriority, { color: string; label: string; icon: string }> = {
-  low: { color: 'bg-slate-500/20 text-slate-700 dark:text-slate-300 border border-slate-500/30', label: 'Niedrig', icon: '○' },
-  medium: { color: 'bg-yellow-500/20 text-yellow-700 dark:text-yellow-400 border border-yellow-500/30', label: 'Mittel', icon: '◐' },
-  high: { color: 'bg-red-100 text-red-800 dark:bg-red-600/30 dark:text-red-300 border border-red-400 dark:border-red-500/50 font-bold', label: 'Hoch', icon: '●' },
-  urgent: { color: 'bg-red-200 text-red-900 dark:bg-red-700/40 dark:text-red-200 border border-red-500 dark:border-red-600/60 font-bold animate-pulse', label: 'Dringend', icon: '⬤' }
+  low: { color: 'bg-slate-500/20 text-slate-700 dark:text-slate-300 border border-slate-500/30 font-semibold', label: 'Niedrig', icon: '○' },
+  medium: { color: 'bg-yellow-500/20 text-yellow-700 dark:text-yellow-400 border border-yellow-500/30 font-semibold', label: 'Mittel', icon: '◐' },
+  high: { color: 'bg-red-100 text-red-800 dark:bg-red-600/30 dark:text-red-300 border border-red-400 dark:border-red-500/50 font-bold animate-priority-pulse', label: 'Hoch', icon: '●' },
+  urgent: { color: 'bg-red-200 text-red-900 dark:bg-red-700/40 dark:text-red-200 border border-red-500 dark:border-red-600/60 font-bold animate-priority-pulse', label: 'Dringend', icon: '⬤' }
 };
 
 const statusConfig: Record<TaskStatus, { color: string; label: string }> = {
