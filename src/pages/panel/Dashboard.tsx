@@ -15,10 +15,13 @@ export default function Dashboard() {
     }
   }, [user, loading, navigate]);
 
-  if (loading) {
+  if (loading || (user && !role)) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
-        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+        <div className="flex items-center gap-3 glass-panel rounded-xl px-6 py-4">
+          <Loader2 className="h-5 w-5 animate-spin text-primary" />
+          <p className="text-sm text-muted-foreground">Panel wird geladen…</p>
+        </div>
       </div>
     );
   }
