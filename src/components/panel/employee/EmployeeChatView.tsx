@@ -8,37 +8,32 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/hooks/useAuth';
-import { Send, MessageCircle, Check, CheckCheck } from 'lucide-react';
+import { Send, MessageCircle, Check, CheckCheck, ImagePlus, X } from 'lucide-react';
 import { format } from 'date-fns';
 import { de } from 'date-fns/locale';
+import { getStatusColor } from '../StatusSelector';
 
 type UserStatus = 'online' | 'away' | 'busy' | 'offline';
-
-const statusColors: Record<UserStatus, string> = {
-  online: 'bg-green-500',
-  away: 'bg-yellow-500',
-  busy: 'bg-red-500',
-  offline: 'bg-gray-400'
-};
-
-const statusLabels: Record<UserStatus, string> = {
-  online: 'Online',
-  away: 'Abwesend',
-  busy: 'Beschäftigt',
-  offline: 'Offline'
-};
 
 interface ProfileWithStatus extends Profile {
   status?: UserStatus;
 }
 
+interface ExtendedChatMessage extends ChatMessage {
+  image_url?: string | null;
+}
+
 export default function EmployeeChatView() {
-  const [messages, setMessages] = useState<ChatMessage[]>([]);
+  const [messages, setMessages] = useState<ExtendedChatMessage[]>([]);
   const [newMessage, setNewMessage] = useState('');
   const [profiles, setProfiles] = useState<Record<string, ProfileWithStatus>>({});
+  const [selectedImage, setSelectedImage] = useState<File | null>(null);
+  const [imagePreview, setImagePreview] = useState<string | null>(null);
+  const [uploading, setUploading] = useState(false);
   const { toast } = useToast();
   const { user } = useAuth();
   const scrollRef = useRef<HTMLDivElement>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     if (user) {
@@ -48,19 +43,24 @@ export default function EmployeeChatView() {
       const channel = supabase
         .channel('chat-messages')
         .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'chat_messages' }, (payload) => {
-          const newMsg = payload.new as ChatMessage;
+          const newMsg = payload.new as ExtendedChatMessage;
           if (!newMsg.is_group_message && (newMsg.sender_id === user.id || newMsg.recipient_id === user.id)) {
             setMessages(prev => [...prev, newMsg]);
             scrollToBottom();
+            
+            // Auto-mark as read if it's for us
+            if (newMsg.recipient_id === user.id && !newMsg.read_at) {
+              markMessageAsRead(newMsg.id);
+            }
           }
         })
         .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'chat_messages' }, (payload) => {
-          const updatedMsg = payload.new as ChatMessage;
+          const updatedMsg = payload.new as ExtendedChatMessage;
           setMessages(prev => prev.map(m => m.id === updatedMsg.id ? updatedMsg : m));
         })
         .subscribe();
 
-      // Mark incoming messages as read
+      // Mark initial unread messages as read
       markMessagesAsRead();
 
       return () => {
@@ -71,13 +71,19 @@ export default function EmployeeChatView() {
 
   useEffect(() => {
     scrollToBottom();
-    markMessagesAsRead();
   }, [messages]);
 
   const scrollToBottom = () => {
     setTimeout(() => {
       scrollRef.current?.scrollIntoView({ behavior: 'smooth' });
     }, 100);
+  };
+
+  const markMessageAsRead = async (messageId: string) => {
+    await supabase
+      .from('chat_messages')
+      .update({ read_at: new Date().toISOString() })
+      .eq('id', messageId);
   };
 
   const markMessagesAsRead = async () => {
@@ -102,7 +108,7 @@ export default function EmployeeChatView() {
       .limit(100);
 
     if (data && !error) {
-      setMessages(data as ChatMessage[]);
+      setMessages(data as ExtendedChatMessage[]);
     }
   };
 
@@ -117,8 +123,47 @@ export default function EmployeeChatView() {
     }
   };
 
+  const handleImageSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      if (file.size > 5 * 1024 * 1024) {
+        toast({ title: 'Fehler', description: 'Bild darf maximal 5MB groß sein.', variant: 'destructive' });
+        return;
+      }
+      setSelectedImage(file);
+      setImagePreview(URL.createObjectURL(file));
+    }
+  };
+
+  const clearImage = () => {
+    setSelectedImage(null);
+    setImagePreview(null);
+    if (fileInputRef.current) {
+      fileInputRef.current.value = '';
+    }
+  };
+
+  const uploadImage = async (): Promise<string | null> => {
+    if (!selectedImage || !user) return null;
+
+    const fileExt = selectedImage.name.split('.').pop();
+    const fileName = `${user.id}/${Date.now()}.${fileExt}`;
+
+    const { error } = await supabase.storage
+      .from('chat-images')
+      .upload(fileName, selectedImage);
+
+    if (error) {
+      toast({ title: 'Fehler', description: 'Bild konnte nicht hochgeladen werden.', variant: 'destructive' });
+      return null;
+    }
+
+    const { data } = supabase.storage.from('chat-images').getPublicUrl(fileName);
+    return data.publicUrl;
+  };
+
   const handleSendMessage = async () => {
-    if (!newMessage.trim() || !user) return;
+    if ((!newMessage.trim() && !selectedImage) || !user) return;
 
     // Find admin to send to
     const lastAdminMessage = [...messages].reverse().find(m => m.sender_id !== user.id);
@@ -129,17 +174,32 @@ export default function EmployeeChatView() {
       return;
     }
 
+    setUploading(true);
+    let imageUrl: string | null = null;
+
+    if (selectedImage) {
+      imageUrl = await uploadImage();
+      if (!imageUrl && selectedImage) {
+        setUploading(false);
+        return;
+      }
+    }
+
     const { error } = await supabase.from('chat_messages').insert({
       sender_id: user.id,
       recipient_id: recipientId,
-      message: newMessage.trim(),
-      is_group_message: false
+      message: newMessage.trim() || '',
+      is_group_message: false,
+      image_url: imageUrl
     });
+
+    setUploading(false);
 
     if (error) {
       toast({ title: 'Fehler', description: 'Nachricht konnte nicht gesendet werden.', variant: 'destructive' });
     } else {
       setNewMessage('');
+      clearImage();
     }
   };
 
@@ -183,29 +243,31 @@ export default function EmployeeChatView() {
                   const isOwn = msg.sender_id === user?.id;
                   const senderProfile = profiles[msg.sender_id];
                   const senderStatus = getStatus(msg.sender_id);
+                  const senderName = senderProfile 
+                    ? `${senderProfile.first_name} ${senderProfile.last_name}`
+                    : 'Unbekannt';
                   
                   return (
                     <div
                       key={msg.id}
                       className={`flex gap-3 ${isOwn ? 'flex-row-reverse' : ''}`}
                     >
-                      <div className="relative">
-                        <Avatar className="h-10 w-10 shrink-0">
+                      <div className="relative shrink-0">
+                        <Avatar className="h-10 w-10">
                           <AvatarImage src={getProfileAvatar(msg.sender_id) || ''} />
                           <AvatarFallback className="text-xs bg-primary/10 text-primary">
                             {senderProfile?.first_name?.[0]}{senderProfile?.last_name?.[0]}
                           </AvatarFallback>
                         </Avatar>
-                        {/* Status indicator */}
                         <span 
-                          className={`absolute -bottom-0.5 -left-0.5 h-3.5 w-3.5 rounded-full border-2 border-background ${statusColors[senderStatus]}`}
-                          title={statusLabels[senderStatus]}
+                          className={`absolute -bottom-0.5 -left-0.5 h-3.5 w-3.5 rounded-full border-2 border-background ${getStatusColor(senderStatus)}`}
+                          title={senderStatus}
                         />
                       </div>
                       <div className={`max-w-[70%] ${isOwn ? 'items-end' : 'items-start'}`}>
                         <div className={`flex items-center gap-2 mb-1 ${isOwn ? 'flex-row-reverse' : ''}`}>
                           <span className="text-xs font-medium">
-                            {isOwn ? 'Du' : `${senderProfile?.first_name || 'Unbekannt'} ${senderProfile?.last_name || ''}`}
+                            {isOwn ? 'Du' : senderName}
                           </span>
                           <span className="text-xs text-muted-foreground">
                             {format(new Date(msg.created_at), 'HH:mm', { locale: de })}
@@ -218,11 +280,21 @@ export default function EmployeeChatView() {
                               : 'bg-muted rounded-tl-sm'
                           }`}
                         >
-                          <p className="text-sm whitespace-pre-wrap break-words">{msg.message}</p>
+                          {msg.image_url && (
+                            <img 
+                              src={msg.image_url} 
+                              alt="Bild" 
+                              className="max-w-full rounded-lg mb-2 max-h-64 object-contain cursor-pointer"
+                              onClick={() => window.open(msg.image_url!, '_blank')}
+                            />
+                          )}
+                          {msg.message && (
+                            <p className="text-sm whitespace-pre-wrap break-words">{msg.message}</p>
+                          )}
                         </div>
                         {/* Read receipt */}
                         {isOwn && (
-                          <div className="flex justify-end mt-1" title={msg.read_at ? 'Gelesen' : 'Gesendet'}>
+                          <div className="flex justify-end mt-1" title={msg.read_at ? `Gelesen um ${format(new Date(msg.read_at), 'HH:mm', { locale: de })}` : 'Gesendet'}>
                             {msg.read_at ? (
                               <CheckCheck className="h-4 w-4 text-primary" />
                             ) : (
@@ -241,7 +313,37 @@ export default function EmployeeChatView() {
           
           {messages.length > 0 && (
             <div className="p-4 border-t bg-background">
+              {imagePreview && (
+                <div className="relative inline-block mb-2">
+                  <img 
+                    src={imagePreview} 
+                    alt="Preview" 
+                    className="h-20 w-20 object-cover rounded-lg"
+                  />
+                  <button
+                    onClick={clearImage}
+                    className="absolute -top-2 -right-2 bg-destructive text-destructive-foreground rounded-full p-1"
+                  >
+                    <X className="h-3 w-3" />
+                  </button>
+                </div>
+              )}
               <div className="flex gap-2">
+                <input
+                  type="file"
+                  ref={fileInputRef}
+                  onChange={handleImageSelect}
+                  accept="image/*"
+                  className="hidden"
+                />
+                <Button 
+                  variant="ghost" 
+                  size="icon" 
+                  onClick={() => fileInputRef.current?.click()}
+                  title="Bild hochladen"
+                >
+                  <ImagePlus className="h-5 w-5" />
+                </Button>
                 <Input
                   value={newMessage}
                   onChange={(e) => setNewMessage(e.target.value)}
@@ -249,7 +351,11 @@ export default function EmployeeChatView() {
                   placeholder="Nachricht schreiben..."
                   className="flex-1"
                 />
-                <Button onClick={handleSendMessage} disabled={!newMessage.trim()} size="icon">
+                <Button 
+                  onClick={handleSendMessage} 
+                  disabled={(!newMessage.trim() && !selectedImage) || uploading} 
+                  size="icon"
+                >
                   <Send className="h-4 w-4" />
                 </Button>
               </div>

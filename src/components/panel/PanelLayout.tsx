@@ -6,18 +6,22 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { LogOut, LayoutGrid } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import logo from '@/assets/logo.png';
+import { supabase } from '@/integrations/supabase/client';
 
 interface PanelLayoutProps {
   children: ReactNode;
   title: string;
   onLogoClick?: () => void;
+  headerActions?: ReactNode;
 }
 
-export default function PanelLayout({ children, title, onLogoClick }: PanelLayoutProps) {
+export default function PanelLayout({ children, title, onLogoClick, headerActions }: PanelLayoutProps) {
   const { profile, role, signOut } = useAuth();
   const navigate = useNavigate();
 
   const handleSignOut = async () => {
+    // Set status to offline before signing out
+    await supabase.from('profiles').update({ status: 'offline' }).eq('user_id', profile?.user_id);
     await signOut();
     navigate('/panel/login');
   };
@@ -29,7 +33,11 @@ export default function PanelLayout({ children, title, onLogoClick }: PanelLayou
     }
   };
 
-  const avatarUrl = profile?.avatar_url;
+  const getAvatarUrl = () => {
+    if (!profile?.avatar_url) return null;
+    const { data } = supabase.storage.from('avatars').getPublicUrl(profile.avatar_url);
+    return data.publicUrl;
+  };
 
   return (
     <div className="min-h-screen bg-background">
@@ -60,11 +68,10 @@ export default function PanelLayout({ children, title, onLogoClick }: PanelLayou
           </div>
           
           <div className="flex items-center gap-3">
+            {headerActions}
             <div className="hidden md:flex items-center gap-3 px-4 py-2 glass-panel rounded-xl">
               <Avatar className="h-9 w-9 ring-2 ring-primary/20">
-                {avatarUrl ? (
-                  <AvatarImage src={avatarUrl} alt={`${profile?.first_name} ${profile?.last_name}`} />
-                ) : null}
+                <AvatarImage src={getAvatarUrl() || ''} alt={`${profile?.first_name} ${profile?.last_name}`} />
                 <AvatarFallback className="bg-primary/10 text-primary text-sm font-semibold">
                   {profile?.first_name?.[0]}{profile?.last_name?.[0]}
                 </AvatarFallback>
