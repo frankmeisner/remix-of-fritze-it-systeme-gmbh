@@ -34,6 +34,35 @@ export function StatusSelector() {
   useEffect(() => {
     if (user) {
       fetchStatus();
+
+      // Listen for profile status changes (e.g., if admin removes status)
+      const channel = supabase
+        .channel('status-selector-updates')
+        .on('postgres_changes', { 
+          event: 'UPDATE', 
+          schema: 'public', 
+          table: 'profiles',
+          filter: `user_id=eq.${user.id}`
+        }, (payload) => {
+          const newStatus = payload.new?.status as UserStatus | null;
+          if (newStatus) {
+            setStatus(newStatus);
+          }
+        })
+        .on('postgres_changes', { 
+          event: 'DELETE', 
+          schema: 'public', 
+          table: 'profiles',
+          filter: `user_id=eq.${user.id}`
+        }, () => {
+          // Profile was deleted - refresh page
+          window.location.reload();
+        })
+        .subscribe();
+
+      return () => {
+        supabase.removeChannel(channel);
+      };
     }
   }, [user]);
 
