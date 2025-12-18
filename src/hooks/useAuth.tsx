@@ -60,17 +60,42 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     try {
       const [profileRes, roleRes] = await Promise.all([
         supabase.from('profiles').select('*').eq('user_id', userId).maybeSingle(),
-        supabase.from('user_roles').select('role').eq('user_id', userId).maybeSingle()
+        supabase.from('user_roles').select('role').eq('user_id', userId).maybeSingle(),
       ]);
+
+      if (profileRes.error) {
+        console.error('Error fetching profile:', profileRes.error);
+      }
+      if (roleRes.error) {
+        console.error('Error fetching role:', roleRes.error);
+      }
 
       if (profileRes.data) {
         setProfile(profileRes.data as Profile);
+      } else {
+        setProfile(null);
       }
-      if (roleRes.data) {
+
+      // Role fallback: avoid blank panels if RLS prevents selecting user_roles
+      if (roleRes.data?.role) {
         setRole(roleRes.data.role as AppRole);
+      } else {
+        const { data: isAdmin, error: roleCheckError } = await supabase.rpc('has_role', {
+          _user_id: userId,
+          _role: 'admin',
+        });
+
+        if (roleCheckError) {
+          console.error('Error checking role via has_role:', roleCheckError);
+          setRole(null);
+        } else {
+          setRole((isAdmin ? 'admin' : 'employee') as AppRole);
+        }
       }
     } catch (error) {
       console.error('Error fetching user data:', error);
+      setProfile(null);
+      setRole(null);
     } finally {
       setLoading(false);
     }
