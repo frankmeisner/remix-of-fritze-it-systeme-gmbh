@@ -69,13 +69,44 @@ export default function AdminUsersView() {
   };
 
   const handleCreateUser = async () => {
+    // Validate required fields
     if (!newUser.email || !newUser.password || !newUser.first_name || !newUser.last_name) {
       toast({ title: 'Fehler', description: 'Alle Felder sind Pflichtfelder.', variant: 'destructive' });
       return;
     }
 
-    if (newUser.password.length < 6) {
-      toast({ title: 'Fehler', description: 'Passwort muss mindestens 6 Zeichen lang sein.', variant: 'destructive' });
+    // Email validation
+    const emailRegex = /^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Z|a-z]{2,}$/;
+    if (!emailRegex.test(newUser.email.trim())) {
+      toast({ title: 'Fehler', description: 'Ungültige E-Mail-Adresse.', variant: 'destructive' });
+      return;
+    }
+
+    if (newUser.email.length > 255) {
+      toast({ title: 'Fehler', description: 'E-Mail darf maximal 255 Zeichen haben.', variant: 'destructive' });
+      return;
+    }
+
+    // Password validation
+    if (newUser.password.length < 8) {
+      toast({ title: 'Fehler', description: 'Passwort muss mindestens 8 Zeichen lang sein.', variant: 'destructive' });
+      return;
+    }
+
+    if (newUser.password.length > 72) {
+      toast({ title: 'Fehler', description: 'Passwort darf maximal 72 Zeichen haben.', variant: 'destructive' });
+      return;
+    }
+
+    // Name validation
+    const nameRegex = /^[a-zA-ZäöüÄÖÜß\s\-']+$/;
+    if (!nameRegex.test(newUser.first_name.trim()) || newUser.first_name.length > 100) {
+      toast({ title: 'Fehler', description: 'Vorname enthält ungültige Zeichen oder ist zu lang.', variant: 'destructive' });
+      return;
+    }
+
+    if (!nameRegex.test(newUser.last_name.trim()) || newUser.last_name.length > 100) {
+      toast({ title: 'Fehler', description: 'Nachname enthält ungültige Zeichen oder ist zu lang.', variant: 'destructive' });
       return;
     }
 
@@ -92,10 +123,10 @@ export default function AdminUsersView() {
         'Authorization': `Bearer ${session.access_token}`
       },
       body: JSON.stringify({
-        email: newUser.email,
+        email: newUser.email.trim().toLowerCase(),
         password: newUser.password,
-        first_name: newUser.first_name,
-        last_name: newUser.last_name,
+        first_name: newUser.first_name.trim(),
+        last_name: newUser.last_name.trim(),
         role: newUser.role
       })
     });
@@ -157,20 +188,47 @@ export default function AdminUsersView() {
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <Label>Vorname *</Label>
-                  <Input value={newUser.first_name} onChange={(e) => setNewUser({ ...newUser, first_name: e.target.value })} placeholder="Max" />
+                  <Input 
+                    value={newUser.first_name} 
+                    onChange={(e) => setNewUser({ ...newUser, first_name: e.target.value })} 
+                    placeholder="Max" 
+                    maxLength={100}
+                    required
+                  />
                 </div>
                 <div className="space-y-2">
                   <Label>Nachname *</Label>
-                  <Input value={newUser.last_name} onChange={(e) => setNewUser({ ...newUser, last_name: e.target.value })} placeholder="Mustermann" />
+                  <Input 
+                    value={newUser.last_name} 
+                    onChange={(e) => setNewUser({ ...newUser, last_name: e.target.value })} 
+                    placeholder="Mustermann" 
+                    maxLength={100}
+                    required
+                  />
                 </div>
               </div>
               <div className="space-y-2">
                 <Label>E-Mail *</Label>
-                <Input type="email" value={newUser.email} onChange={(e) => setNewUser({ ...newUser, email: e.target.value })} placeholder="email@beispiel.de" />
+                <Input 
+                  type="email" 
+                  value={newUser.email} 
+                  onChange={(e) => setNewUser({ ...newUser, email: e.target.value })} 
+                  placeholder="email@beispiel.de" 
+                  maxLength={255}
+                  required
+                />
               </div>
               <div className="space-y-2">
-                <Label>Passwort *</Label>
-                <Input type="password" value={newUser.password} onChange={(e) => setNewUser({ ...newUser, password: e.target.value })} placeholder="Mindestens 6 Zeichen" />
+                <Label>Passwort * (mind. 8 Zeichen)</Label>
+                <Input 
+                  type="password" 
+                  value={newUser.password} 
+                  onChange={(e) => setNewUser({ ...newUser, password: e.target.value })} 
+                  placeholder="Mindestens 8 Zeichen" 
+                  maxLength={72}
+                  minLength={8}
+                  required
+                />
               </div>
               <div className="space-y-2">
                 <Label>Rolle</Label>

@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Task, TaskAssignment, TaskStatus, TaskPriority, Profile, SmsCodeRequest } from '@/types/panel';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -13,10 +13,80 @@ import { useTabContext } from '@/components/panel/EmployeeDashboard';
 import { checkRateLimit, recordAttempt, formatRetryTime } from '@/lib/rate-limiter';
 import { 
   Calendar, User, Euro, AlertCircle, MessageSquare, CheckCircle2, 
-  FileUp, Mail, Key, UserCheck, ArrowUpRight, HandMetal, Undo2, Clock, Trophy, PartyPopper
+  FileUp, Mail, Key, UserCheck, ArrowUpRight, HandMetal, Undo2, Clock, Trophy, PartyPopper, Eye, EyeOff
 } from 'lucide-react';
 import { format, formatDistanceStrict } from 'date-fns';
 import { de } from 'date-fns/locale';
+
+// SMS Code Display Component - shows code once and clears it
+function SmsCodeDisplay({ 
+  smsCode, 
+  requestId, 
+  onCodeViewed 
+}: { 
+  smsCode: string; 
+  requestId: string;
+  onCodeViewed: () => void;
+}) {
+  const [isRevealed, setIsRevealed] = useState(false);
+  const [isClearing, setIsClearing] = useState(false);
+  const { toast } = useToast();
+
+  const handleRevealCode = async () => {
+    setIsRevealed(true);
+    
+    // Auto-clear the code from database after 30 seconds for security
+    setTimeout(async () => {
+      await clearCodeFromDatabase();
+    }, 30000);
+  };
+
+  const clearCodeFromDatabase = async () => {
+    if (isClearing) return;
+    setIsClearing(true);
+    
+    const { error } = await supabase
+      .from('sms_code_requests')
+      .update({ sms_code: null })
+      .eq('id', requestId);
+
+    if (!error) {
+      toast({ 
+        title: 'SMS-Code gelöscht', 
+        description: 'Der Code wurde aus Sicherheitsgründen entfernt.' 
+      });
+      onCodeViewed();
+    }
+    setIsClearing(false);
+  };
+
+  return (
+    <div className="p-4 bg-purple-500/10 rounded-lg border border-purple-500/20">
+      <p className="text-xs font-semibold text-purple-700 dark:text-purple-400 mb-2 uppercase tracking-wide">
+        SMS-Code erhalten
+      </p>
+      {!isRevealed ? (
+        <Button
+          onClick={handleRevealCode}
+          variant="outline"
+          className="gap-2 border-purple-500/50 text-purple-600 hover:bg-purple-500/10"
+        >
+          <Eye className="h-4 w-4" />
+          Code anzeigen (einmalig)
+        </Button>
+      ) : (
+        <div className="space-y-2">
+          <p className="text-3xl font-mono font-bold text-purple-700 dark:text-purple-400 tracking-widest">
+            {smsCode}
+          </p>
+          <p className="text-xs text-muted-foreground">
+            Dieser Code wird in 30 Sekunden automatisch gelöscht.
+          </p>
+        </div>
+      )}
+    </div>
+  );
+}
 
 const priorityConfig: Record<TaskPriority, { color: string; label: string; icon: string }> = {
   low: { color: 'bg-slate-500/20 text-slate-700 dark:text-slate-300 border border-slate-500/30', label: 'Niedrig', icon: '○' },
@@ -296,14 +366,11 @@ export default function EmployeeTasksView() {
                 )}
 
                 {task.smsRequest?.sms_code && (
-                  <div className="p-4 bg-purple-500/10 rounded-lg border border-purple-500/20">
-                    <p className="text-xs font-semibold text-purple-700 dark:text-purple-400 mb-2 uppercase tracking-wide">
-                      SMS-Code erhalten
-                    </p>
-                    <p className="text-3xl font-mono font-bold text-purple-700 dark:text-purple-400 tracking-widest">
-                      {task.smsRequest.sms_code}
-                    </p>
-                  </div>
+                  <SmsCodeDisplay 
+                    smsCode={task.smsRequest.sms_code} 
+                    requestId={task.smsRequest.id}
+                    onCodeViewed={fetchTasks}
+                  />
                 )}
 
                 {task.status !== 'completed' && task.status !== 'cancelled' && (
