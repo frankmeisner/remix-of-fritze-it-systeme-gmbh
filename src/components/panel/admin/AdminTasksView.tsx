@@ -478,11 +478,30 @@ export default function AdminTasksView() {
                             variant="outline"
                             size="sm"
                             className="gap-1 text-xs"
-                            onClick={() => {
-                              toast({
-                                title: 'Status angefordert',
-                                description: `Eine Statusanfrage wurde an ${assignee.first_name} gesendet.`
+                            onClick={async () => {
+                              const assignment = getTaskAssignment(task.id);
+                              if (!assignment) return;
+                              
+                              const { error } = await supabase.from('notifications').insert({
+                                user_id: assignment.user_id,
+                                title: 'Statusanfrage',
+                                message: `Der Admin bittet um ein kurzes Update zum Auftrag "${task.title}".`,
+                                type: 'status_request',
+                                related_task_id: task.id
                               });
+                              
+                              if (error) {
+                                toast({
+                                  title: 'Fehler',
+                                  description: 'Statusanfrage konnte nicht gesendet werden.',
+                                  variant: 'destructive'
+                                });
+                              } else {
+                                toast({
+                                  title: 'Status angefordert',
+                                  description: `Eine Statusanfrage wurde an ${assignee.first_name} gesendet.`
+                                });
+                              }
                             }}
                           >
                             <MessageCircle className="h-3 w-3" />

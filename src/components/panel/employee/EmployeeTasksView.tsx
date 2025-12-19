@@ -103,10 +103,17 @@ const statusConfig: Record<TaskStatus, { color: string; label: string }> = {
   cancelled: { color: 'bg-destructive/20 text-destructive', label: 'Storniert' }
 };
 
+interface StatusRequest {
+  id: string;
+  related_task_id: string | null;
+  read_at: string | null;
+}
+
 export default function EmployeeTasksView() {
   const [tasks, setTasks] = useState<(Task & { assignment?: TaskAssignment; assignedBy?: Profile; smsRequest?: SmsCodeRequest })[]>([]);
   const [taskDocuments, setTaskDocuments] = useState<Record<string, number>>({});
   const [progressNotes, setProgressNotes] = useState<Record<string, string>>({});
+  const [statusRequests, setStatusRequests] = useState<StatusRequest[]>([]);
   const [completionDialog, setCompletionDialog] = useState<{
     open: boolean;
     task: (Task & { assignment?: TaskAssignment }) | null;
@@ -120,12 +127,14 @@ export default function EmployeeTasksView() {
   useEffect(() => {
     if (user) {
       fetchTasks();
+      fetchStatusRequests();
 
       const channel = supabase
         .channel('employee-tasks')
         .on('postgres_changes', { event: '*', schema: 'public', table: 'tasks' }, fetchTasks)
         .on('postgres_changes', { event: '*', schema: 'public', table: 'task_assignments' }, fetchTasks)
         .on('postgres_changes', { event: '*', schema: 'public', table: 'sms_code_requests' }, fetchTasks)
+        .on('postgres_changes', { event: '*', schema: 'public', table: 'notifications' }, fetchStatusRequests)
         .subscribe();
 
       return () => {
@@ -133,6 +142,29 @@ export default function EmployeeTasksView() {
       };
     }
   }, [user]);
+
+  const fetchStatusRequests = async () => {
+    if (!user) return;
+    
+    const { data } = await supabase
+      .from('notifications')
+      .select('id, related_task_id, read_at')
+      .eq('user_id', user.id)
+      .eq('type', 'status_request')
+      .is('read_at', null);
+    
+    if (data) {
+      setStatusRequests(data);
+    }
+  };
+
+  const handleDismissStatusRequest = async (taskId: string) => {
+    const request = statusRequests.find(r => r.related_task_id === taskId);
+    if (request) {
+      await supabase.from('notifications').update({ read_at: new Date().toISOString() }).eq('id', request.id);
+      setStatusRequests(prev => prev.filter(r => r.id !== request.id));
+    }
+  };
 
   const fetchTasks = async () => {
     if (!user) return;
@@ -419,11 +451,34 @@ export default function EmployeeTasksView() {
                   <>
                     <Separator />
                     <div className="space-y-4">
+                      {statusRequests.some(r => r.related_task_id === task.id) && (
+                        <div className="p-4 bg-amber-500/10 rounded-lg border border-amber-500/30 animate-pulse">
+                          <div className="flex items-start justify-between gap-3">
+                            <div className="flex items-start gap-3">
+                              <MessageSquare className="h-5 w-5 text-amber-600 dark:text-amber-400 mt-0.5 shrink-0" />
+                              <div>
+                                <p className="font-medium text-amber-700 dark:text-amber-400">Statusanfrage vom Admin</p>
+                                <p className="text-sm text-muted-foreground mt-1">
+                                  Bitte schreibe eine kurze Notiz zum aktuellen Fortschritt dieses Auftrags.
+                                </p>
+                              </div>
+                            </div>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => handleDismissStatusRequest(task.id)}
+                              className="text-amber-600 hover:bg-amber-500/20 shrink-0"
+                            >
+                              Verstanden
+                            </Button>
+                          </div>
+                        </div>
+                      )}
                       <Textarea
                         placeholder="Fortschritt und Notizen hier eingeben..."
                         value={progressNotes[task.id] || task.assignment?.progress_notes || ''}
                         onChange={(e) => setProgressNotes({ ...progressNotes, [task.id]: e.target.value })}
-                        className="min-h-[100px] resize-none"
+                        className={`min-h-[100px] resize-none ${statusRequests.some(r => r.related_task_id === task.id) ? 'ring-2 ring-amber-500/50 border-amber-500' : ''}`}
                       />
                       <div className="flex flex-wrap gap-3">
                         {task.status === 'assigned' && !task.assignment?.accepted_at ? (
