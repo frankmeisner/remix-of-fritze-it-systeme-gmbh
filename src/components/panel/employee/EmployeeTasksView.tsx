@@ -296,14 +296,24 @@ export default function EmployeeTasksView() {
         </div>
       </div>
 
-      {tasks.length === 0 ? (
+      {activeTasks.length === 0 ? (
         <Card className="shadow-lg border-dashed">
           <CardContent className="py-16 text-center">
             <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-muted flex items-center justify-center">
               <AlertCircle className="h-8 w-8 text-muted-foreground" />
             </div>
             <h3 className="text-lg font-semibold mb-2">Keine Aufträge</h3>
-            <p className="text-muted-foreground">Dir wurden noch keine Aufträge zugewiesen.</p>
+            <p className="text-muted-foreground">
+              {tasks.length > 0 
+                ? (
+                  <>
+                    🎉 Super gemacht! Du hast alle deine Aufträge abgeschlossen.<br />
+                    <span className="text-sm">Bei Fragen oder für neue Aufgaben wende dich gerne an ein Teammitglied.</span>
+                  </>
+                )
+                : 'Dir wurden noch keine Aufträge zugewiesen.'
+              }
+            </p>
           </CardContent>
         </Card>
       ) : (
