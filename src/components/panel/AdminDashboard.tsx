@@ -26,6 +26,23 @@ export default function AdminDashboard() {
     setActiveTabState(tab);
   };
 
+  // Save scroll position on visibility change (tab switch)
+  useEffect(() => {
+    const handleVisibilityChange = () => {
+      if (document.hidden) {
+        sessionStorage.setItem('adminScrollPosition', window.scrollY.toString());
+      } else {
+        const savedPosition = sessionStorage.getItem('adminScrollPosition');
+        if (savedPosition) {
+          setTimeout(() => window.scrollTo(0, parseInt(savedPosition)), 0);
+        }
+      }
+    };
+
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    return () => document.removeEventListener('visibilitychange', handleVisibilityChange);
+  }, []);
+
   useEffect(() => {
     fetchPendingSmsCount();
 

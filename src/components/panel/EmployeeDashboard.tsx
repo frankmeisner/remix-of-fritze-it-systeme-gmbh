@@ -53,6 +53,23 @@ export default function EmployeeDashboard() {
     setActiveTabState(tab);
   };
 
+  // Save scroll position on visibility change (tab switch)
+  useEffect(() => {
+    const handleVisibilityChange = () => {
+      if (document.hidden) {
+        sessionStorage.setItem('employeeScrollPosition', window.scrollY.toString());
+      } else {
+        const savedPosition = sessionStorage.getItem('employeeScrollPosition');
+        if (savedPosition) {
+          setTimeout(() => window.scrollTo(0, parseInt(savedPosition)), 0);
+        }
+      }
+    };
+
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    return () => document.removeEventListener('visibilitychange', handleVisibilityChange);
+  }, []);
+
   // Fetch unread notifications count and listen for new status requests
   useEffect(() => {
     if (!user) return;
@@ -147,6 +164,9 @@ export default function EmployeeDashboard() {
         .update({ status: 'offline' })
         .eq('user_id', profile.user_id);
     }
+    // Clear saved tab for fresh start on next login
+    sessionStorage.removeItem('employeeActiveTab');
+    sessionStorage.removeItem('employeeScrollPosition');
     await signOut();
     navigate('/panel/login');
   };

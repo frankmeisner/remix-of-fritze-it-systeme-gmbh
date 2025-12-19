@@ -22,6 +22,9 @@ export default function PanelLayout({ children, title, onLogoClick, headerAction
   const handleSignOut = async () => {
     // Set status to offline before signing out
     await supabase.from('profiles').update({ status: 'offline' }).eq('user_id', profile?.user_id);
+    // Clear saved tab and scroll position for fresh start on next login
+    sessionStorage.removeItem('adminActiveTab');
+    sessionStorage.removeItem('adminScrollPosition');
     await signOut();
     navigate('/panel/login');
   };
