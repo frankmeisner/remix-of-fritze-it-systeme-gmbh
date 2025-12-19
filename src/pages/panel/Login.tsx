@@ -58,7 +58,7 @@ export default function PanelLogin() {
       <Card className="w-full max-w-md shadow-elevated">
         <CardHeader className="text-center space-y-4">
           <div className="flex justify-center">
-            <img src={logo} alt="Fritze IT" className="h-16" />
+            <img src={logo} alt="Fritze IT" className="h-16 dark:brightness-0 dark:invert" />
           </div>
           <CardTitle className="text-2xl font-bold">Mitarbeiter-Login</CardTitle>
           <CardDescription>
