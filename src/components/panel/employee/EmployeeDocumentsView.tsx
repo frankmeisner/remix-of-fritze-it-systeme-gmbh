@@ -26,7 +26,7 @@ export default function EmployeeDocumentsView() {
   const [documents, setDocuments] = useState<Document[]>([]);
   const [tasks, setTasks] = useState<Task[]>([]);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
-  const [documentType, setDocumentType] = useState('other');
+  const [documentType, setDocumentType] = useState('documentation');
   const [selectedTask, setSelectedTask] = useState<string>('none');
   const [uploading, setUploading] = useState(false);
   const { toast } = useToast();
