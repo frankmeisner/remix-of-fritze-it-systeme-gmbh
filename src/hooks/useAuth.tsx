@@ -29,6 +29,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         setSession(session);
         setUser(session?.user ?? null);
 
+        // Ensure Realtime uses the latest JWT (fixes missing postgres_changes events)
+        try {
+          supabase.realtime.setAuth(session?.access_token ?? '');
+        } catch (e) {
+          console.warn('Could not set realtime auth token:', e);
+        }
+
         if (session?.user) {
           // Ensure dashboards never render with half-loaded auth state
           setLoading(true);
@@ -46,6 +53,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     supabase.auth.getSession().then(({ data: { session } }) => {
       setSession(session);
       setUser(session?.user ?? null);
+
+      // Ensure Realtime uses the latest JWT (fixes missing postgres_changes events)
+      try {
+        supabase.realtime.setAuth(session?.access_token ?? '');
+      } catch (e) {
+        console.warn('Could not set realtime auth token:', e);
+      }
+
       if (session?.user) {
         setLoading(true);
         fetchUserData(session.user.id);
@@ -129,6 +144,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const signOut = async () => {
     await supabase.auth.signOut();
+
+    try {
+      supabase.realtime.setAuth('');
+    } catch {
+      // ignore
+    }
+
     setProfile(null);
     setRole(null);
   };
