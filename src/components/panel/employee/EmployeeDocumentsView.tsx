@@ -120,7 +120,7 @@ export default function EmployeeDocumentsView() {
 
       toast({ title: 'Erfolg', description: 'Dokument wurde hochgeladen.' });
       setSelectedFile(null);
-      setDocumentType('other');
+      setDocumentType('documentation');
       setSelectedTask('none');
       // Reset file input
       const fileInput = document.querySelector('input[type="file"]') as HTMLInputElement;
