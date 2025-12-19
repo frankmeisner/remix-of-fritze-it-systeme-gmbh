@@ -411,6 +411,10 @@ export type Database = {
         }
         Returns: boolean
       }
+      notify_admins_task_completed: {
+        Args: { _employee_name: string; _task_id: string; _task_title: string }
+        Returns: undefined
+      }
       update_user_status: { Args: { new_status: string }; Returns: undefined }
     }
     Enums: {

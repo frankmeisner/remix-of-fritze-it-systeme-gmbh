@@ -264,24 +264,12 @@ export default function EmployeeTasksView() {
 
     const employeeName = profile ? `${profile.first_name} ${profile.last_name}` : 'Ein Mitarbeiter';
 
-    // Get all admin user IDs and create notifications for them
-    const { data: adminRoles } = await supabase
-      .from('user_roles')
-      .select('user_id')
-      .eq('role', 'admin');
-
-    if (adminRoles && adminRoles.length > 0) {
-      const notifications = adminRoles.map(admin => ({
-        user_id: admin.user_id,
-        title: 'Auftrag abgeschlossen',
-        message: `${employeeName} hat den Auftrag "${task.title}" abgegeben.`,
-        type: 'task_completed',
-        related_task_id: task.id,
-        related_user_id: user?.id
-      }));
-
-      await supabase.from('notifications').insert(notifications);
-    }
+    // Use secure database function to notify admins (bypasses RLS with SECURITY DEFINER)
+    await supabase.rpc('notify_admins_task_completed', {
+      _task_id: task.id,
+      _task_title: task.title,
+      _employee_name: employeeName
+    });
     
     // Show completion dialog with stats and praise
     setCompletionDialog({
