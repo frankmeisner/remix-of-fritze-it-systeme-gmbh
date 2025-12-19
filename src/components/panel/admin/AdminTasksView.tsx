@@ -11,7 +11,8 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/hooks/useAuth';
-import { Plus, Calendar, User, Phone, Euro, AlertCircle, Mail, Key, Activity, MessageCircle, Radio, CheckCircle, Clock, Archive } from 'lucide-react';
+import { Plus, Calendar, User, Phone, Euro, AlertCircle, Mail, Key, Activity, MessageCircle, Radio, CheckCircle, Clock, Trash2 } from 'lucide-react';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import { format } from 'date-fns';
 import { de } from 'date-fns/locale';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -190,6 +191,23 @@ export default function AdminTasksView() {
     }
   };
 
+  const handleDeleteTask = async (taskId: string) => {
+    // First delete related records
+    await supabase.from('sms_code_requests').delete().eq('task_id', taskId);
+    await supabase.from('documents').delete().eq('task_id', taskId);
+    await supabase.from('task_assignments').delete().eq('task_id', taskId);
+    
+    // Then delete the task
+    const { error } = await supabase.from('tasks').delete().eq('id', taskId);
+    
+    if (error) {
+      toast({ title: 'Fehler', description: 'Auftrag konnte nicht gelöscht werden.', variant: 'destructive' });
+    } else {
+      toast({ title: 'Erfolg', description: 'Auftrag wurde gelöscht.' });
+      fetchTasks();
+    }
+  };
+
   const getTaskAssignee = (taskId: string) => {
     const assignment = assignments.find(a => a.task_id === taskId);
     if (!assignment) return null;
@@ -357,18 +375,50 @@ export default function AdminTasksView() {
                       )}
                     </div>
                   </div>
-                  {!assignee && task.status === 'pending' && (
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => {
-                        setSelectedTask(task);
-                        setIsAssignDialogOpen(true);
-                      }}
-                    >
-                      Zuweisen
-                    </Button>
-                  )}
+                  <div className="flex items-center gap-2">
+                    {!assignee && task.status === 'pending' && (
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => {
+                          setSelectedTask(task);
+                          setIsAssignDialogOpen(true);
+                        }}
+                      >
+                        Zuweisen
+                      </Button>
+                    )}
+                    {(task.status === 'completed' || task.status === 'cancelled') && (
+                      <AlertDialog>
+                        <AlertDialogTrigger asChild>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="text-destructive hover:text-destructive hover:bg-destructive/10"
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </AlertDialogTrigger>
+                        <AlertDialogContent>
+                          <AlertDialogHeader>
+                            <AlertDialogTitle>Auftrag löschen?</AlertDialogTitle>
+                            <AlertDialogDescription>
+                              Dieser Vorgang kann nicht rückgängig gemacht werden. Der Auftrag "{task.title}" und alle zugehörigen Daten werden dauerhaft gelöscht.
+                            </AlertDialogDescription>
+                          </AlertDialogHeader>
+                          <AlertDialogFooter>
+                            <AlertDialogCancel>Abbrechen</AlertDialogCancel>
+                            <AlertDialogAction
+                              onClick={() => handleDeleteTask(task.id)}
+                              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                            >
+                              Löschen
+                            </AlertDialogAction>
+                          </AlertDialogFooter>
+                        </AlertDialogContent>
+                      </AlertDialog>
+                    )}
+                  </div>
                 </div>
               </CardHeader>
               <CardContent>
