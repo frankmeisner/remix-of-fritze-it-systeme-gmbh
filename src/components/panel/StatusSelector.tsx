@@ -55,8 +55,8 @@ export function StatusSelector() {
           table: 'profiles',
           filter: `user_id=eq.${user.id}`
         }, () => {
-          // Profile was deleted - refresh page
-          window.location.reload();
+          // Profile was deleted (e.g. account removed) – keep UI stable without hard reload
+          setStatus('offline');
         })
         .subscribe();
 
@@ -84,16 +84,14 @@ export function StatusSelector() {
 
   const updateStatus = async (newStatus: SelectableStatus) => {
     if (!user) return;
-    
+
     const { error } = await supabase
       .from('profiles')
       .update({ status: newStatus })
       .eq('user_id', user.id);
-    
+
     if (!error) {
       setStatus(newStatus);
-      // Reload page after status change
-      window.location.reload();
     }
   };
 
