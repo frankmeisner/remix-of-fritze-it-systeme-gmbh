@@ -15,16 +15,16 @@ type SelectableStatus = 'online' | 'away' | 'busy';
 type UserStatus = SelectableStatus | 'offline';
 
 const statusConfig: Record<SelectableStatus, { label: string; color: string; bgClass: string }> = {
-  online: { label: 'Online', color: 'text-green-500', bgClass: 'bg-green-500' },
-  away: { label: 'Abwesend', color: 'text-orange-500', bgClass: 'bg-orange-500' },
-  busy: { label: 'Beschäftigt', color: 'text-red-500', bgClass: 'bg-red-500' },
+  online: { label: 'Online', color: 'text-status-online', bgClass: 'bg-status-online' },
+  away: { label: 'Abwesend', color: 'text-status-away', bgClass: 'bg-status-away' },
+  busy: { label: 'Beschäftigt', color: 'text-status-busy', bgClass: 'bg-status-busy' },
 };
 
 const allStatusConfig: Record<UserStatus, { label: string; bgClass: string }> = {
-  online: { label: 'Online', bgClass: 'bg-green-500' },
-  away: { label: 'Abwesend', bgClass: 'bg-orange-500' },
-  busy: { label: 'Beschäftigt', bgClass: 'bg-red-500' },
-  offline: { label: 'Offline', bgClass: 'bg-gray-400' },
+  online: { label: 'Online', bgClass: 'bg-status-online' },
+  away: { label: 'Abwesend', bgClass: 'bg-status-away' },
+  busy: { label: 'Beschäftigt', bgClass: 'bg-status-busy' },
+  offline: { label: 'Offline', bgClass: 'bg-status-offline' },
 };
 
 export function StatusSelector() {
@@ -95,7 +95,7 @@ export function StatusSelector() {
     }
   };
 
-  const currentStatusConfig = status === 'offline' ? allStatusConfig.online : statusConfig[status as SelectableStatus];
+  const currentStatusConfig = allStatusConfig[status];
 
   return (
     <DropdownMenu>
@@ -123,5 +123,5 @@ export function StatusSelector() {
 
 // Export status colors for use in other components
 export const getStatusColor = (status: string): string => {
-  return allStatusConfig[status as UserStatus]?.bgClass || 'bg-gray-400';
+  return allStatusConfig[status as UserStatus]?.bgClass || allStatusConfig.offline.bgClass;
 };

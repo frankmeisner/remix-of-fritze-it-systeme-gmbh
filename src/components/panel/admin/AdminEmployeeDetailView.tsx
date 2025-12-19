@@ -243,9 +243,9 @@ export default function AdminEmployeeDetailView({ employee, onBack }: AdminEmplo
               {/* Status indicator */}
               <span 
                 className={`absolute bottom-1 left-1 h-5 w-5 rounded-full border-3 border-card ${
-                  (employee as any).status === 'online' ? 'bg-green-500' :
-                  (employee as any).status === 'away' ? 'bg-orange-500' :
-                  (employee as any).status === 'busy' ? 'bg-red-500' : 'bg-gray-400'
+                  (employee as any).status === 'online' ? 'bg-status-online' :
+                  (employee as any).status === 'away' ? 'bg-status-away' :
+                  (employee as any).status === 'busy' ? 'bg-status-busy' : 'bg-status-offline'
                 }`}
                 title={
                   (employee as any).status === 'online' ? 'Online' :

@@ -204,10 +204,10 @@ export default function EmployeeDashboard() {
   };
 
   const statusColors: Record<string, string> = {
-    online: 'bg-green-500',
-    away: 'bg-orange-500',
-    busy: 'bg-red-500',
-    offline: 'bg-gray-400'
+    online: 'bg-status-online',
+    away: 'bg-status-away',
+    busy: 'bg-status-busy',
+    offline: 'bg-status-offline'
   };
 
   return (

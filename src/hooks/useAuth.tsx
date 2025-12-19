@@ -162,7 +162,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       if (profileRes.data) {
         setProfile(profileRes.data as Profile);
       } else {
+        // If the profile row is gone, the account was removed -> force logout immediately
+        console.warn('Profile missing (account removed). Forcing logout.');
         setProfile(null);
+        setRole(null);
+        setSession(null);
+        setUser(null);
+        try {
+          await supabase.auth.signOut();
+        } finally {
+          window.location.href = '/panel/login';
+        }
+        return;
       }
 
       // Role fallback: avoid blank panels if RLS prevents selecting user_roles
