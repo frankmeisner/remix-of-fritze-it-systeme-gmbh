@@ -19,6 +19,7 @@ const documentTypes = [
   { value: 'contract', label: 'Vertrag' },
   { value: 'certificate', label: 'Zertifikat' },
   { value: 'task_document', label: 'Auftragsdokument' },
+  { value: 'letter', label: 'Brief' },
   { value: 'other', label: 'Sonstiges' }
 ];
 

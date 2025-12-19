@@ -259,7 +259,12 @@ export default function AdminTasksView() {
               </div>
               <div className="space-y-2">
                 <Label>Beschreibung</Label>
-                <Textarea value={newTask.description} onChange={(e) => setNewTask({ ...newTask, description: e.target.value })} placeholder="Auftragsdetails..." />
+                <Textarea 
+                  value={newTask.description} 
+                  onChange={(e) => setNewTask({ ...newTask, description: e.target.value })} 
+                  placeholder="Auftragsdetails..." 
+                  className="min-h-[120px] whitespace-pre-wrap"
+                />
               </div>
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
@@ -416,7 +421,7 @@ export default function AdminTasksView() {
               </CardHeader>
               <CardContent>
                 <div className="space-y-3 text-sm">
-                  {task.description && <p className="text-muted-foreground">{task.description}</p>}
+                  {task.description && <p className="text-muted-foreground whitespace-pre-wrap">{task.description}</p>}
                   <div className="flex flex-wrap gap-4 text-muted-foreground">
                     <span className="flex items-center gap-1">
                       <User className="h-4 w-4" />
