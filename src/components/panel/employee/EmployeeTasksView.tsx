@@ -218,18 +218,15 @@ export default function EmployeeTasksView() {
     }
   };
 
-  const handleResendSmsCode = async (taskId: string, existingRequestId: string) => {
+  const handleResendSmsCode = async (taskId: string, _existingRequestId: string) => {
     setResendingCode(taskId);
-    
-    // Update existing request - clear the old code and set status to pending
-    const { error } = await supabase
-      .from('sms_code_requests')
-      .update({ 
-        sms_code: null, 
-        status: 'pending',
-        requested_at: new Date().toISOString()
-      })
-      .eq('id', existingRequestId);
+
+    // Employees are allowed to INSERT requests, but not UPDATE them (RLS).
+    // So re-requests create a new pending request record.
+    const { error } = await supabase.from('sms_code_requests').insert({
+      task_id: taskId,
+      user_id: user?.id,
+    });
 
     if (error) {
       toast({ title: 'Fehler', description: 'Neuer SMS-Code konnte nicht angefordert werden.', variant: 'destructive' });
@@ -237,6 +234,7 @@ export default function EmployeeTasksView() {
       toast({ title: 'Erfolg', description: 'Neuer SMS-Code wurde angefordert.' });
       fetchTasks();
     }
+
     setResendingCode(null);
   };
 
