@@ -369,15 +369,15 @@ export default function EmployeeTasksView() {
                   <div className="space-y-2">
                     <CardTitle className="text-xl">{task.title}</CardTitle>
                     <div className="flex flex-wrap items-center gap-2">
-                      <Badge className={`${priorityConfig[task.priority].color} border font-medium`}>
+                      <Badge className={`${priorityConfig[task.priority].color} border font-medium hover:opacity-100`}>
                         {priorityConfig[task.priority].icon} {priorityConfig[task.priority].label}
                       </Badge>
-                      <Badge className={statusConfig[task.status].color}>
+                      <Badge className={`${statusConfig[task.status].color} hover:opacity-100`}>
                         {statusConfig[task.status].label}
                       </Badge>
                       {task.special_compensation && task.special_compensation > 0 && (
-                        <Badge className="bg-emerald-500/20 text-emerald-700 dark:text-emerald-400 border border-emerald-500/30">
-                          {task.special_compensation.toFixed(2)} €
+                        <Badge className="bg-emerald-500/20 text-emerald-700 dark:text-emerald-400 border border-emerald-500/30 hover:bg-emerald-500/20 hover:text-emerald-700 dark:hover:text-emerald-400">
+                          Bonus: {task.special_compensation.toFixed(2)} €
                         </Badge>
                       )}
                     </div>
@@ -409,7 +409,7 @@ export default function EmployeeTasksView() {
               <CardContent className="space-y-6">
                 {task.description && (
                   <div className="p-4 bg-muted/50 rounded-lg">
-                    <p className="text-sm leading-relaxed">{task.description}</p>
+                    <p className="text-sm leading-relaxed whitespace-pre-wrap">{task.description}</p>
                   </div>
                 )}
                 

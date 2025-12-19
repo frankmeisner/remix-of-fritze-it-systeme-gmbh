@@ -262,11 +262,6 @@ export default function EmployeeDashboard() {
                     {sidebarOpen && (
                       <span className="font-medium flex-1">{item.label}</span>
                     )}
-                    {sidebarOpen && item.id === 'notifications' && unreadNotifications > 0 && (
-                      <span className="bg-red-500 text-white text-xs font-bold px-2 py-0.5 rounded-full">
-                        {unreadNotifications}
-                      </span>
-                    )}
                   </button>
                 </li>
               ))}

@@ -225,35 +225,30 @@ export default function EmployeeDocumentsView() {
 
               <div className="space-y-2">
                 <Label>Zu Auftrag zuordnen {lockedTaskId ? '' : '(optional)'}</Label>
-                <Select 
-                  value={selectedTask} 
-                  onValueChange={setSelectedTask}
-                  disabled={!!lockedTaskId}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Kein Auftrag" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {lockedTaskId ? (
-                      // Only show the locked task
-                      tasks.filter(t => t.id === lockedTaskId).map((task) => (
+                {lockedTaskId ? (
+                  // Show locked task as non-interactive display
+                  <div className="flex h-10 w-full items-center rounded-md border border-input bg-muted px-3 py-2 text-sm text-muted-foreground">
+                    {tasks.find(t => t.id === lockedTaskId)?.title || 'Auftrag wird geladen...'}
+                  </div>
+                ) : (
+                  // Show select when not locked
+                  <Select 
+                    value={selectedTask} 
+                    onValueChange={setSelectedTask}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Kein Auftrag" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="none">Kein Auftrag</SelectItem>
+                      {tasks.map((task) => (
                         <SelectItem key={task.id} value={task.id}>
                           {task.title}
                         </SelectItem>
-                      ))
-                    ) : (
-                      // Show all options when not locked
-                      <>
-                        <SelectItem value="none">Kein Auftrag</SelectItem>
-                        {tasks.map((task) => (
-                          <SelectItem key={task.id} value={task.id}>
-                            {task.title}
-                          </SelectItem>
-                        ))}
-                      </>
-                    )}
-                  </SelectContent>
-                </Select>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                )}
               </div>
             </div>
 
