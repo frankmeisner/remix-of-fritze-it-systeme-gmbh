@@ -10,7 +10,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } f
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/hooks/useAuth';
 import { useTabContext } from '@/components/panel/EmployeeDashboard';
-import { checkRateLimit, recordAttempt, formatRetryTime } from '@/lib/rate-limiter';
+
 import { 
   Calendar, User, Euro, AlertCircle, MessageSquare, CheckCircle2, 
   FileUp, Mail, Key, UserCheck, ArrowUpRight, HandMetal, Undo2, Clock, Trophy, PartyPopper, Eye, EyeOff, RefreshCw
@@ -105,6 +105,7 @@ const statusConfig: Record<TaskStatus, { color: string; label: string }> = {
 
 export default function EmployeeTasksView() {
   const [tasks, setTasks] = useState<(Task & { assignment?: TaskAssignment; assignedBy?: Profile; smsRequest?: SmsCodeRequest })[]>([]);
+  const [taskDocuments, setTaskDocuments] = useState<Record<string, number>>({});
   const [progressNotes, setProgressNotes] = useState<Record<string, string>>({});
   const [completionDialog, setCompletionDialog] = useState<{
     open: boolean;
@@ -144,11 +145,23 @@ export default function EmployeeTasksView() {
     if (assignments && assignments.length > 0) {
       const taskIds = assignments.map(a => a.task_id);
       
-      const [tasksRes, profilesRes, smsRes] = await Promise.all([
-        supabase.from('tasks').select('*').in('id', taskIds).order('deadline', { ascending: true }),
+      const [tasksRes, profilesRes, smsRes, docsRes] = await Promise.all([
+        supabase.from('tasks').select('*').in('id', taskIds).order('created_at', { ascending: false }),
         supabase.from('profiles').select('*'),
-        supabase.from('sms_code_requests').select('*').in('task_id', taskIds).eq('user_id', user.id)
+        supabase.from('sms_code_requests').select('*').in('task_id', taskIds).eq('user_id', user.id),
+        supabase.from('documents').select('id, task_id').eq('user_id', user.id).in('task_id', taskIds)
       ]);
+
+      // Count documents per task
+      const docCounts: Record<string, number> = {};
+      if (docsRes.data) {
+        docsRes.data.forEach(doc => {
+          if (doc.task_id) {
+            docCounts[doc.task_id] = (docCounts[doc.task_id] || 0) + 1;
+          }
+        });
+      }
+      setTaskDocuments(docCounts);
 
       if (tasksRes.data) {
         const enrichedTasks = tasksRes.data.map(task => {
@@ -166,6 +179,7 @@ export default function EmployeeTasksView() {
       }
     } else {
       setTasks([]);
+      setTaskDocuments({});
     }
   };
 
@@ -190,23 +204,6 @@ export default function EmployeeTasksView() {
   };
 
   const handleRequestSms = async (taskId: string) => {
-    // Rate limit SMS code requests - 1 per 5 minutes per task
-    const rateLimitKey = `sms:${user?.id}:${taskId}`;
-    const { allowed, retryAfterMs } = checkRateLimit(rateLimitKey, 'smsRequest');
-    
-    if (!allowed) {
-      const retryTime = formatRetryTime(retryAfterMs);
-      toast({ 
-        title: 'Bitte warten', 
-        description: `Du kannst in ${retryTime} erneut einen Code anfordern.`, 
-        variant: 'destructive' 
-      });
-      return;
-    }
-    
-    // Record the attempt
-    recordAttempt(rateLimitKey);
-    
     const { error } = await supabase.from('sms_code_requests').insert({
       task_id: taskId,
       user_id: user?.id
@@ -223,24 +220,6 @@ export default function EmployeeTasksView() {
 
   const handleResendSmsCode = async (taskId: string, existingRequestId: string) => {
     setResendingCode(taskId);
-    
-    // Rate limit SMS code requests - 1 per 5 minutes per task
-    const rateLimitKey = `sms:${user?.id}:${taskId}`;
-    const { allowed, retryAfterMs } = checkRateLimit(rateLimitKey, 'smsRequest');
-    
-    if (!allowed) {
-      const retryTime = formatRetryTime(retryAfterMs);
-      toast({ 
-        title: 'Bitte warten', 
-        description: `Du kannst in ${retryTime} erneut einen Code anfordern.`, 
-        variant: 'destructive' 
-      });
-      setResendingCode(null);
-      return;
-    }
-    
-    // Record the attempt
-    recordAttempt(rateLimitKey);
     
     // Update existing request - clear the old code and set status to pending
     const { error } = await supabase
@@ -466,15 +445,22 @@ export default function EmployeeTasksView() {
                               className="gap-2"
                             >
                               <FileUp className="h-4 w-4" />
-                              Dokumente hochladen
+                              Dokumentation hochladen
                             </Button>
-                            <Button 
-                              onClick={() => handleCompleteTask(task)} 
-                              className="bg-green-600 hover:bg-green-700 gap-2"
-                            >
-                              <CheckCircle2 className="h-4 w-4" />
-                              Abgeben
-                            </Button>
+                            {taskDocuments[task.id] && taskDocuments[task.id] > 0 ? (
+                              <Button 
+                                onClick={() => handleCompleteTask(task)} 
+                                className="bg-green-600 hover:bg-green-700 gap-2"
+                              >
+                                <CheckCircle2 className="h-4 w-4" />
+                                Auftrag abgeben
+                              </Button>
+                            ) : (
+                              <div className="flex items-center gap-2 text-sm text-amber-600 dark:text-amber-400">
+                                <AlertCircle className="h-4 w-4" />
+                                <span>Dokumentation erforderlich zum Abgeben</span>
+                              </div>
+                            )}
                           </>
                         )}
                         <Button 
@@ -494,7 +480,11 @@ export default function EmployeeTasksView() {
       )}
 
       {/* Completion Dialog with Stats and Praise */}
-      <Dialog open={completionDialog.open} onOpenChange={(open) => setCompletionDialog({ ...completionDialog, open })}>
+      <Dialog open={completionDialog.open} onOpenChange={(open) => {
+        if (!open) {
+          setCompletionDialog({ ...completionDialog, open: false });
+        }
+      }}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2 text-2xl">
@@ -533,28 +523,13 @@ export default function EmployeeTasksView() {
               )}
             </div>
             
-            <div className="text-center space-y-2">
-              <p className="text-sm text-muted-foreground">
-                Vergiss nicht, deine Dokumente hochzuladen!
-              </p>
-              <div className="flex gap-2 justify-center">
-                <Button
-                  variant="outline"
-                  onClick={() => setCompletionDialog({ ...completionDialog, open: false })}
-                >
-                  Schließen
-                </Button>
-                <Button
-                  onClick={() => {
-                    setCompletionDialog({ ...completionDialog, open: false });
-                    handleGoToDocuments();
-                  }}
-                  className="bg-primary gap-2"
-                >
-                  <FileUp className="h-4 w-4" />
-                  Dokumente hochladen
-                </Button>
-              </div>
+            <div className="text-center">
+              <Button
+                onClick={() => setCompletionDialog({ ...completionDialog, open: false })}
+                className="bg-primary"
+              >
+                Zurück zu Aufträge
+              </Button>
             </div>
           </div>
         </DialogContent>
