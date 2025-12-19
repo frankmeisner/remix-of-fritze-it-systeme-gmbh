@@ -216,11 +216,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     // Record the attempt before making the request
     recordAttempt(rateLimitKey);
     
-    const { error } = await supabase.auth.signInWithPassword({ email, password });
+    const { data, error } = await supabase.auth.signInWithPassword({ email, password });
     
-    // Clear rate limit on successful login
-    if (!error) {
+    // Clear rate limit and log login on success
+    if (!error && data.user) {
       clearAttempts(rateLimitKey);
+      // Log login activity for admin visibility (fire and forget)
+      supabase.from('activity_logs').insert({
+        user_id: data.user.id,
+        activity_type: 'login',
+        metadata: { email: email.toLowerCase() }
+      }).then(() => {});
     }
     
     return { error };
