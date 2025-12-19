@@ -114,6 +114,7 @@ export default function EmployeeTasksView() {
   const [taskDocuments, setTaskDocuments] = useState<Record<string, number>>({});
   const [progressNotes, setProgressNotes] = useState<Record<string, string>>({});
   const [statusRequests, setStatusRequests] = useState<StatusRequest[]>([]);
+  const [isCheckedIn, setIsCheckedIn] = useState(false);
   const [completionDialog, setCompletionDialog] = useState<{
     open: boolean;
     task: (Task & { assignment?: TaskAssignment }) | null;
@@ -124,10 +125,34 @@ export default function EmployeeTasksView() {
   const { user } = useAuth();
   const tabContext = useTabContext();
 
+  // Check if user is currently checked in
+  const checkTimeStatus = async () => {
+    if (!user) return;
+
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    const { data } = await supabase
+      .from('time_entries')
+      .select('entry_type')
+      .eq('user_id', user.id)
+      .gte('timestamp', today.toISOString())
+      .order('timestamp', { ascending: false })
+      .limit(1);
+
+    if (data && data.length > 0) {
+      const lastEntry = data[0].entry_type;
+      setIsCheckedIn(lastEntry === 'check_in' || lastEntry === 'pause_end');
+    } else {
+      setIsCheckedIn(false);
+    }
+  };
+
   useEffect(() => {
     if (user) {
       fetchTasks();
       fetchStatusRequests();
+      checkTimeStatus();
 
       const channel = supabase
         .channel('employee-tasks')
@@ -135,6 +160,7 @@ export default function EmployeeTasksView() {
         .on('postgres_changes', { event: '*', schema: 'public', table: 'task_assignments' }, fetchTasks)
         .on('postgres_changes', { event: '*', schema: 'public', table: 'sms_code_requests' }, fetchTasks)
         .on('postgres_changes', { event: '*', schema: 'public', table: 'notifications' }, fetchStatusRequests)
+        .on('postgres_changes', { event: '*', schema: 'public', table: 'time_entries' }, checkTimeStatus)
         .subscribe();
 
       return () => {
@@ -483,13 +509,29 @@ export default function EmployeeTasksView() {
                       />
                       <div className="flex flex-wrap gap-3">
                         {task.status === 'assigned' && !task.assignment?.accepted_at ? (
-                          <Button 
-                            onClick={() => handleAcceptTask(task.id)} 
-                            size="lg"
-                            className="bg-emerald-600 hover:bg-emerald-700 text-white font-semibold shadow-lg hover:shadow-xl transition-all"
-                          >
-                            Auftrag annehmen
-                          </Button>
+                          isCheckedIn ? (
+                            <Button 
+                              onClick={() => handleAcceptTask(task.id)} 
+                              size="lg"
+                              className="bg-emerald-600 hover:bg-emerald-700 text-white font-semibold shadow-lg hover:shadow-xl transition-all"
+                            >
+                              Auftrag annehmen
+                            </Button>
+                          ) : (
+                            <div className="flex flex-col gap-2">
+                              <Button 
+                                disabled
+                                size="lg"
+                                className="bg-muted text-muted-foreground cursor-not-allowed"
+                              >
+                                Auftrag annehmen
+                              </Button>
+                              <p className="text-sm text-amber-600 dark:text-amber-400 flex items-center gap-2">
+                                <Clock className="h-4 w-4" />
+                                Bitte zuerst unter Zeiterfassung einstempeln
+                              </p>
+                            </div>
+                          )
                         ) : task.assignment?.accepted_at && (
                           <Button 
                             disabled
