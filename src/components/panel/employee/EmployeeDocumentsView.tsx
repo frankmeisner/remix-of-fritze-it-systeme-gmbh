@@ -82,7 +82,8 @@ export default function EmployeeDocumentsView() {
       const { data: tasksData } = await supabase
         .from('tasks')
         .select('*')
-        .in('id', taskIds);
+        .in('id', taskIds)
+        .not('status', 'in', '("completed","cancelled")');
 
       if (tasksData) {
         setTasks(tasksData as Task[]);
