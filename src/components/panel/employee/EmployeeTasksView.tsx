@@ -88,19 +88,19 @@ function SmsCodeDisplay({
 }
 
 const priorityConfig: Record<TaskPriority, { color: string; label: string; icon: string }> = {
-  low: { color: 'bg-slate-500/20 text-slate-700 dark:text-slate-300 border border-slate-500/30 !font-bold hover:bg-slate-500/20 hover:text-slate-700 dark:hover:text-slate-300', label: 'Niedrig', icon: '○' },
-  medium: { color: 'bg-yellow-500/20 text-yellow-700 dark:text-yellow-400 border border-yellow-500/30 !font-bold hover:bg-yellow-500/20 hover:text-yellow-700 dark:hover:text-yellow-400', label: 'Mittel', icon: '◐' },
-  high: { color: 'bg-red-100 text-red-800 dark:bg-red-600/30 dark:text-red-300 border border-red-400 dark:border-red-500/50 !font-bold animate-priority-pulse hover:bg-red-100 hover:text-red-800 dark:hover:bg-red-600/30 dark:hover:text-red-300', label: 'Hoch', icon: '●' },
-  urgent: { color: 'bg-red-200 text-red-900 dark:bg-red-700/40 dark:text-red-200 border border-red-500 dark:border-red-600/60 !font-bold animate-priority-pulse hover:bg-red-200 hover:text-red-900 dark:hover:bg-red-700/40 dark:hover:text-red-200', label: 'Dringend', icon: '⬤' }
+  low: { color: 'bg-slate-500/20 text-slate-700 dark:text-slate-300 border border-slate-500/30 !font-bold', label: 'Niedrig', icon: '○' },
+  medium: { color: 'bg-yellow-500/20 text-yellow-700 dark:text-yellow-400 border border-yellow-500/30 !font-bold', label: 'Mittel', icon: '◐' },
+  high: { color: 'bg-red-100 text-red-800 dark:bg-red-600/30 dark:text-red-300 border border-red-400 dark:border-red-500/50 !font-bold animate-priority-pulse', label: 'Hoch', icon: '●' },
+  urgent: { color: 'bg-red-200 text-red-900 dark:bg-red-700/40 dark:text-red-200 border border-red-500 dark:border-red-600/60 !font-bold animate-priority-pulse', label: 'Dringend', icon: '⬤' }
 };
 
 const statusConfig: Record<TaskStatus, { color: string; label: string }> = {
-  pending: { color: 'bg-muted text-muted-foreground hover:bg-muted hover:text-muted-foreground', label: 'Offen' },
-  assigned: { color: 'bg-emerald-500/20 text-emerald-700 dark:text-emerald-400 hover:bg-emerald-500/20 hover:text-emerald-700 dark:hover:text-emerald-400', label: 'Zugewiesen' },
-  in_progress: { color: 'bg-blue-500/20 text-blue-700 dark:text-blue-400 hover:bg-blue-500/20 hover:text-blue-700 dark:hover:text-blue-400', label: 'In Bearbeitung' },
-  sms_requested: { color: 'bg-purple-500/20 text-purple-700 dark:text-purple-400 hover:bg-purple-500/20 hover:text-purple-700 dark:hover:text-purple-400', label: 'SMS angefordert' },
-  completed: { color: 'bg-green-500/20 text-green-700 dark:text-green-400 hover:bg-green-500/20 hover:text-green-700 dark:hover:text-green-400', label: 'Abgeschlossen' },
-  cancelled: { color: 'bg-destructive/20 text-destructive hover:bg-destructive/20 hover:text-destructive', label: 'Storniert' }
+  pending: { color: 'bg-muted text-muted-foreground', label: 'Offen' },
+  assigned: { color: 'bg-emerald-500/20 text-emerald-700 dark:text-emerald-400', label: 'Zugewiesen' },
+  in_progress: { color: 'bg-blue-500/20 text-blue-700 dark:text-blue-400', label: 'In Bearbeitung' },
+  sms_requested: { color: 'bg-purple-500/20 text-purple-700 dark:text-purple-400', label: 'SMS angefordert' },
+  completed: { color: 'bg-green-500/20 text-green-700 dark:text-green-400', label: 'Abgeschlossen' },
+  cancelled: { color: 'bg-destructive/20 text-destructive', label: 'Storniert' }
 };
 
 interface StatusRequest {
@@ -154,25 +154,57 @@ export default function EmployeeTasksView() {
       fetchStatusRequests();
       checkTimeStatus();
 
+      // Subscribe to realtime changes with user-specific filter where applicable
       const channel = supabase
-        .channel('employee-tasks')
-        .on('postgres_changes', { event: '*', schema: 'public', table: 'tasks' }, () => {
-          console.log('[Realtime] tasks changed');
+        .channel(`employee-tasks-${user.id}`)
+        .on('postgres_changes', { 
+          event: '*', 
+          schema: 'public', 
+          table: 'task_assignments',
+          filter: `user_id=eq.${user.id}`
+        }, (payload) => {
+          console.log('[Realtime] task_assignments changed', payload);
           fetchTasks();
         })
-        .on('postgres_changes', { event: '*', schema: 'public', table: 'task_assignments' }, () => {
-          console.log('[Realtime] task_assignments changed');
+        .on('postgres_changes', { 
+          event: '*', 
+          schema: 'public', 
+          table: 'sms_code_requests',
+          filter: `user_id=eq.${user.id}`
+        }, (payload) => {
+          console.log('[Realtime] sms_code_requests changed', payload);
+          // Show toast when SMS code is received
+          if (payload.eventType === 'UPDATE' && payload.new?.sms_code && !payload.old?.sms_code) {
+            toast({
+              title: '📱 SMS-Code erhalten!',
+              description: 'Der Admin hat dir den SMS-Code weitergeleitet.',
+            });
+          }
           fetchTasks();
         })
-        .on('postgres_changes', { event: '*', schema: 'public', table: 'sms_code_requests' }, () => {
-          console.log('[Realtime] sms_code_requests changed');
+        .on('postgres_changes', { 
+          event: '*', 
+          schema: 'public', 
+          table: 'tasks'
+        }, (payload) => {
+          console.log('[Realtime] tasks changed', payload);
           fetchTasks();
         })
-        .on('postgres_changes', { event: '*', schema: 'public', table: 'notifications' }, () => {
+        .on('postgres_changes', { 
+          event: '*', 
+          schema: 'public', 
+          table: 'notifications',
+          filter: `user_id=eq.${user.id}`
+        }, () => {
           console.log('[Realtime] notifications changed');
           fetchStatusRequests();
         })
-        .on('postgres_changes', { event: '*', schema: 'public', table: 'time_entries' }, () => {
+        .on('postgres_changes', { 
+          event: '*', 
+          schema: 'public', 
+          table: 'time_entries',
+          filter: `user_id=eq.${user.id}`
+        }, () => {
           console.log('[Realtime] time_entries changed');
           checkTimeStatus();
         })
@@ -184,7 +216,7 @@ export default function EmployeeTasksView() {
         supabase.removeChannel(channel);
       };
     }
-  }, [user]);
+  }, [user, toast]);
 
   const fetchStatusRequests = async () => {
     if (!user) return;
@@ -412,14 +444,14 @@ export default function EmployeeTasksView() {
                   <div className="space-y-2">
                     <CardTitle className="text-xl">{task.title}</CardTitle>
                     <div className="flex flex-wrap items-center gap-2">
-                      <Badge className={`${priorityConfig[task.priority].color} border font-medium`}>
+                      <Badge variant="status" className={`${priorityConfig[task.priority].color} border font-medium`}>
                         {priorityConfig[task.priority].icon} {priorityConfig[task.priority].label}
                       </Badge>
-                      <Badge className={statusConfig[task.status].color}>
+                      <Badge variant="status" className={statusConfig[task.status].color}>
                         {statusConfig[task.status].label}
                       </Badge>
                       {task.special_compensation && task.special_compensation > 0 && (
-                        <Badge className="bg-emerald-500/20 text-emerald-700 dark:text-emerald-400 border border-emerald-500/30 hover:bg-emerald-500/20 hover:text-emerald-700 dark:hover:text-emerald-400">
+                        <Badge variant="status" className="bg-emerald-500/20 text-emerald-700 dark:text-emerald-400 border border-emerald-500/30">
                           Bonus: {task.special_compensation.toFixed(2)} €
                         </Badge>
                       )}
@@ -570,8 +602,8 @@ export default function EmployeeTasksView() {
                                 SMS-Code Anfragen
                               </Button>
                             )}
-                            {task.smsRequest && task.smsRequest.status === 'pending' && (
-                              <Badge className="bg-purple-500/20 text-purple-700 dark:text-purple-400 py-2 px-3">
+                            {task.smsRequest && (task.smsRequest.status === 'pending' || task.smsRequest.status === 'resend_requested') && (
+                              <Badge variant="status" className="bg-purple-500/20 text-purple-700 dark:text-purple-400 py-2 px-3">
                                 SMS-Code angefordert - warte auf Antwort...
                               </Badge>
                             )}
