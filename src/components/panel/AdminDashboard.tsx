@@ -14,10 +14,17 @@ import { StatusSelector } from './StatusSelector';
 import { useAuth } from '@/hooks/useAuth';
 
 export default function AdminDashboard() {
-  const [activeTab, setActiveTab] = useState('tasks');
+  const [activeTab, setActiveTabState] = useState(() => {
+    return sessionStorage.getItem('adminActiveTab') || 'tasks';
+  });
   const [pendingSmsCount, setPendingSmsCount] = useState(0);
   const { toast } = useToast();
   const { user } = useAuth();
+
+  const setActiveTab = (tab: string) => {
+    sessionStorage.setItem('adminActiveTab', tab);
+    setActiveTabState(tab);
+  };
 
   useEffect(() => {
     fetchPendingSmsCount();
