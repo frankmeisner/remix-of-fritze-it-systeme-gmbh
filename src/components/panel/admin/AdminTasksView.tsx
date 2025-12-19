@@ -480,7 +480,17 @@ export default function AdminTasksView() {
                             className="gap-1 text-xs"
                             onClick={async () => {
                               const assignment = getTaskAssignment(task.id);
-                              if (!assignment) return;
+                              if (!assignment) {
+                                console.error('No assignment found for task:', task.id);
+                                toast({
+                                  title: 'Fehler',
+                                  description: 'Keine Zuweisung für diesen Auftrag gefunden.',
+                                  variant: 'destructive'
+                                });
+                                return;
+                              }
+                              
+                              console.log('Sending status request notification to user:', assignment.user_id, 'for task:', task.id);
                               
                               const { error } = await supabase.from('notifications').insert({
                                 user_id: assignment.user_id,
@@ -491,12 +501,14 @@ export default function AdminTasksView() {
                               });
                               
                               if (error) {
+                                console.error('Error sending status request:', error);
                                 toast({
                                   title: 'Fehler',
-                                  description: 'Statusanfrage konnte nicht gesendet werden.',
+                                  description: `Statusanfrage konnte nicht gesendet werden: ${error.message}`,
                                   variant: 'destructive'
                                 });
                               } else {
+                                console.log('Status request notification sent successfully');
                                 toast({
                                   title: 'Status angefordert',
                                   description: `Eine Statusanfrage wurde an ${assignee.first_name} gesendet.`
