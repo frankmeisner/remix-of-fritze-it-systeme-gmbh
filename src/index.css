@@ -34,6 +34,12 @@
     --input: 0 10% 88%;
     --ring: 0 75% 45%;
 
+    /* Status colors (panel presence) */
+    --status-online: 142 76% 36%;
+    --status-away: 32 95% 45%;
+    --status-busy: 0 84% 60%;
+    --status-offline: 0 0% 55%;
+
     --radius: 0.75rem;
 
     /* Custom tokens */
@@ -73,6 +79,12 @@
     --border: 0 3% 18%;
     --input: 0 3% 18%;
     --ring: 0 72% 45%;
+
+    /* Status colors (panel presence) */
+    --status-online: 142 72% 42%;
+    --status-away: 32 95% 55%;
+    --status-busy: 0 80% 62%;
+    --status-offline: 0 0% 55%;
 
     /* Panel-specific tokens */
     --panel-glow: 0 72% 45%;

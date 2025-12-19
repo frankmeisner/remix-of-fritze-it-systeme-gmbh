@@ -38,8 +38,10 @@ export default function EmployeeNotificationsView() {
       fetchNotifications();
 
       const channel = supabase
-        .channel('employee-notifications')
-        .on('postgres_changes', { event: '*', schema: 'public', table: 'notifications' }, fetchNotifications)
+        .channel(`employee-notifications:${user.id}`)
+        .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'notifications', filter: `user_id=eq.${user.id}` }, fetchNotifications)
+        .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'notifications', filter: `user_id=eq.${user.id}` }, fetchNotifications)
+        .on('postgres_changes', { event: 'DELETE', schema: 'public', table: 'notifications', filter: `user_id=eq.${user.id}` }, fetchNotifications)
         .subscribe();
 
       return () => {
@@ -55,6 +57,7 @@ export default function EmployeeNotificationsView() {
       .from('notifications')
       .select('*')
       .eq('user_id', user.id)
+      .is('read_at', null)
       .order('created_at', { ascending: false });
 
     if (!error && data) {
@@ -64,16 +67,29 @@ export default function EmployeeNotificationsView() {
   };
 
   const handleMarkAsRead = async (id: string) => {
-    await supabase.from('notifications').update({ read_at: new Date().toISOString() }).eq('id', id);
-    setNotifications(prev => prev.map(n => n.id === id ? { ...n, read_at: new Date().toISOString() } : n));
+    const { error } = await supabase
+      .from('notifications')
+      .update({ read_at: new Date().toISOString() })
+      .eq('id', id);
+
+    if (!error) {
+      // Remove from list immediately (we only show unread)
+      setNotifications(prev => prev.filter(n => n.id !== id));
+    }
   };
 
   const handleMarkAllAsRead = async () => {
-    const unreadIds = notifications.filter(n => !n.read_at).map(n => n.id);
+    const unreadIds = notifications.map(n => n.id);
     if (unreadIds.length === 0) return;
 
-    await supabase.from('notifications').update({ read_at: new Date().toISOString() }).in('id', unreadIds);
-    setNotifications(prev => prev.map(n => ({ ...n, read_at: n.read_at || new Date().toISOString() })));
+    const { error } = await supabase
+      .from('notifications')
+      .update({ read_at: new Date().toISOString() })
+      .in('id', unreadIds);
+
+    if (!error) {
+      setNotifications([]);
+    }
   };
 
   const handleGoToTask = (taskId: string | null) => {
