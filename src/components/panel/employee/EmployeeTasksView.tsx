@@ -13,16 +13,20 @@ import { useTabContext } from '@/components/panel/EmployeeDashboard';
 import { checkRateLimit, recordAttempt, formatRetryTime } from '@/lib/rate-limiter';
 import { 
   Calendar, User, Euro, AlertCircle, MessageSquare, CheckCircle2, 
-  FileUp, Mail, Key, UserCheck, ArrowUpRight, HandMetal, Undo2, Clock, Trophy, PartyPopper, Eye, EyeOff
+  FileUp, Mail, Key, UserCheck, ArrowUpRight, HandMetal, Undo2, Clock, Trophy, PartyPopper, Eye, EyeOff, RefreshCw
 } from 'lucide-react';
 import { format, formatDistanceStrict } from 'date-fns';
 import { de } from 'date-fns/locale';
 
-// SMS Code Display Component - shows code multiple times
+// SMS Code Display Component - shows code multiple times with resend option
 function SmsCodeDisplay({ 
-  smsCode 
+  smsCode,
+  onResendCode,
+  isResending
 }: { 
-  smsCode: string; 
+  smsCode: string;
+  onResendCode: () => void;
+  isResending: boolean;
 }) {
   const [isRevealed, setIsRevealed] = useState(false);
 
@@ -32,28 +36,51 @@ function SmsCodeDisplay({
         SMS-Code erhalten
       </p>
       {!isRevealed ? (
-        <Button
-          onClick={() => setIsRevealed(true)}
-          variant="outline"
-          className="gap-2 border-purple-500/50 text-purple-600 hover:bg-purple-500/10"
-        >
-          <Eye className="h-4 w-4" />
-          Code anzeigen
-        </Button>
+        <div className="flex flex-wrap gap-2">
+          <Button
+            onClick={() => setIsRevealed(true)}
+            variant="outline"
+            className="gap-2 border-purple-500/50 text-purple-600 hover:bg-purple-500/10"
+          >
+            <Eye className="h-4 w-4" />
+            Code anzeigen
+          </Button>
+          <Button
+            onClick={onResendCode}
+            variant="outline"
+            disabled={isResending}
+            className="gap-2 border-purple-500/50 text-purple-600 hover:bg-purple-500/10"
+          >
+            <RefreshCw className={`h-4 w-4 ${isResending ? 'animate-spin' : ''}`} />
+            Neuen Code anfordern
+          </Button>
+        </div>
       ) : (
-        <div className="space-y-2">
+        <div className="space-y-3">
           <p className="text-3xl font-mono font-bold text-purple-700 dark:text-purple-400 tracking-widest">
             {smsCode}
           </p>
-          <Button
-            onClick={() => setIsRevealed(false)}
-            variant="ghost"
-            size="sm"
-            className="gap-2 text-purple-600 hover:bg-purple-500/10"
-          >
-            <EyeOff className="h-4 w-4" />
-            Ausblenden
-          </Button>
+          <div className="flex flex-wrap gap-2">
+            <Button
+              onClick={() => setIsRevealed(false)}
+              variant="ghost"
+              size="sm"
+              className="gap-2 text-purple-600 hover:bg-purple-500/10"
+            >
+              <EyeOff className="h-4 w-4" />
+              Ausblenden
+            </Button>
+            <Button
+              onClick={onResendCode}
+              variant="ghost"
+              size="sm"
+              disabled={isResending}
+              className="gap-2 text-purple-600 hover:bg-purple-500/10"
+            >
+              <RefreshCw className={`h-4 w-4 ${isResending ? 'animate-spin' : ''}`} />
+              Neuen Code anfordern
+            </Button>
+          </div>
         </div>
       )}
     </div>
@@ -84,6 +111,7 @@ export default function EmployeeTasksView() {
     task: (Task & { assignment?: TaskAssignment }) | null;
     duration: string;
   }>({ open: false, task: null, duration: '' });
+  const [resendingCode, setResendingCode] = useState<string | null>(null);
   const { toast } = useToast();
   const { user } = useAuth();
   const tabContext = useTabContext();
@@ -191,6 +219,46 @@ export default function EmployeeTasksView() {
       toast({ title: 'Erfolg', description: 'SMS-Code wurde angefordert.' });
       fetchTasks();
     }
+  };
+
+  const handleResendSmsCode = async (taskId: string, existingRequestId: string) => {
+    setResendingCode(taskId);
+    
+    // Rate limit SMS code requests - 1 per 5 minutes per task
+    const rateLimitKey = `sms:${user?.id}:${taskId}`;
+    const { allowed, retryAfterMs } = checkRateLimit(rateLimitKey, 'smsRequest');
+    
+    if (!allowed) {
+      const retryTime = formatRetryTime(retryAfterMs);
+      toast({ 
+        title: 'Bitte warten', 
+        description: `Du kannst in ${retryTime} erneut einen Code anfordern.`, 
+        variant: 'destructive' 
+      });
+      setResendingCode(null);
+      return;
+    }
+    
+    // Record the attempt
+    recordAttempt(rateLimitKey);
+    
+    // Update existing request - clear the old code and set status to pending
+    const { error } = await supabase
+      .from('sms_code_requests')
+      .update({ 
+        sms_code: null, 
+        status: 'pending',
+        requested_at: new Date().toISOString()
+      })
+      .eq('id', existingRequestId);
+
+    if (error) {
+      toast({ title: 'Fehler', description: 'Neuer SMS-Code konnte nicht angefordert werden.', variant: 'destructive' });
+    } else {
+      toast({ title: 'Erfolg', description: 'Neuer SMS-Code wurde angefordert.' });
+      fetchTasks();
+    }
+    setResendingCode(null);
   };
 
   const handleCompleteTask = async (task: Task & { assignment?: TaskAssignment }) => {
@@ -340,7 +408,11 @@ export default function EmployeeTasksView() {
                 )}
 
                 {task.smsRequest?.sms_code && (
-                  <SmsCodeDisplay smsCode={task.smsRequest.sms_code} />
+                  <SmsCodeDisplay 
+                    smsCode={task.smsRequest.sms_code} 
+                    onResendCode={() => handleResendSmsCode(task.id, task.smsRequest!.id)}
+                    isResending={resendingCode === task.id}
+                  />
                 )}
 
                 {task.status !== 'completed' && task.status !== 'cancelled' && (
