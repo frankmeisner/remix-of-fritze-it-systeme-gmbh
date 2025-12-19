@@ -1,8 +1,10 @@
 import { useCallback, useEffect, useState } from 'react';
+import { useNotificationSettings } from './useNotificationSettings';
 
 export function usePushNotifications() {
   const [permission, setPermission] = useState<NotificationPermission>('default');
   const [isSupported, setIsSupported] = useState(false);
+  const { settings } = useNotificationSettings();
 
   useEffect(() => {
     // Check if notifications are supported
@@ -26,6 +28,11 @@ export function usePushNotifications() {
   }, [isSupported]);
 
   const showNotification = useCallback((title: string, options?: NotificationOptions) => {
+    // Check if push notifications are enabled in settings
+    if (!settings.pushEnabled) {
+      return null;
+    }
+
     if (!isSupported || permission !== 'granted') {
       console.log('Notifications not available or not permitted');
       return null;
@@ -52,7 +59,7 @@ export function usePushNotifications() {
       console.warn('Could not show notification:', error);
       return null;
     }
-  }, [isSupported, permission]);
+  }, [isSupported, permission, settings.pushEnabled]);
 
   return {
     isSupported,

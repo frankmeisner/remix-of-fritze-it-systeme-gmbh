@@ -14,6 +14,7 @@ import EmployeeDocumentsView from './employee/EmployeeDocumentsView';
 import EmployeeVacationView from './employee/EmployeeVacationView';
 import EmployeeProfileView from './employee/EmployeeProfileView';
 import EmployeeNotificationsView from './employee/EmployeeNotificationsView';
+import { NotificationSettings } from './employee/NotificationSettings';
 import { StatusSelector } from './StatusSelector';
 import { cn } from '@/lib/utils';
 
@@ -323,6 +324,7 @@ export default function EmployeeDashboard() {
                   </div>
                   <span className="text-sm font-medium">{profile?.first_name}</span>
                 </div>
+                <NotificationSettings />
                 <ThemeToggle />
                 <Button 
                   variant="ghost" 
