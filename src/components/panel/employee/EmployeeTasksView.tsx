@@ -148,7 +148,7 @@ export default function EmployeeTasksView() {
       const [tasksRes, profilesRes, smsRes, docsRes] = await Promise.all([
         supabase.from('tasks').select('*').in('id', taskIds).order('created_at', { ascending: false }),
         supabase.from('profiles').select('*'),
-        supabase.from('sms_code_requests').select('*').in('task_id', taskIds).eq('user_id', user.id),
+        supabase.from('sms_code_requests').select('*').in('task_id', taskIds).eq('user_id', user.id).order('requested_at', { ascending: false }),
         supabase.from('documents').select('id, task_id').eq('user_id', user.id).in('task_id', taskIds)
       ]);
 
@@ -167,7 +167,9 @@ export default function EmployeeTasksView() {
         const enrichedTasks = tasksRes.data.map(task => {
           const assignment = assignments.find(a => a.task_id === task.id);
           const assignedBy = profilesRes.data?.find((p: any) => p.user_id === task.created_by);
-          const smsRequest = smsRes.data?.find(s => s.task_id === task.id);
+          // Get the most recent SMS request for this task that has a code, or fallback to the most recent one
+          const taskSmsRequests = smsRes.data?.filter(s => s.task_id === task.id) || [];
+          const smsRequest = taskSmsRequests.find(s => s.sms_code) || taskSmsRequests[0];
           return {
             ...task as Task,
             assignment: assignment as TaskAssignment | undefined,
