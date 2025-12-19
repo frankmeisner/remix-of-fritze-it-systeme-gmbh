@@ -42,7 +42,6 @@ export default function EmployeeDashboard() {
   const [pendingTaskId, setPendingTaskId] = useState<string | null>(null);
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
-  const [userStatus, setUserStatus] = useState<'online' | 'away' | 'busy' | 'offline'>('offline');
   const [unreadNotifications, setUnreadNotifications] = useState(0);
   const { profile, signOut, user } = useAuth();
   const navigate = useNavigate();
@@ -129,22 +128,9 @@ export default function EmployeeDashboard() {
       const { data } = supabase.storage.from('avatars').getPublicUrl(profile.avatar_url);
       setAvatarUrl(data.publicUrl);
     }
-    // Fetch current status
-    if (profile?.user_id) {
-      supabase
-        .from('profiles')
-        .select('status')
-        .eq('user_id', profile.user_id)
-        .single()
-        .then(({ data }) => {
-          if (data?.status) {
-            setUserStatus(data.status as typeof userStatus);
-          }
-        });
-    }
   }, [profile]);
 
-  // Listen for profile updates
+  // Listen for profile avatar updates
   useEffect(() => {
     if (!profile?.user_id) return;
     
@@ -160,9 +146,6 @@ export default function EmployeeDashboard() {
           const { data } = supabase.storage.from('avatars').getPublicUrl(payload.new.avatar_url as string);
           setAvatarUrl(data.publicUrl);
         }
-        if (payload.new?.status) {
-          setUserStatus(payload.new.status as typeof userStatus);
-        }
       })
       .subscribe();
 
@@ -172,13 +155,6 @@ export default function EmployeeDashboard() {
   }, [profile?.user_id]);
 
   const handleSignOut = async () => {
-    // Set status to offline
-    if (profile?.user_id) {
-      await supabase
-        .from('profiles')
-        .update({ status: 'offline' })
-        .eq('user_id', profile.user_id);
-    }
     // Clear saved tab for fresh start on next login
     sessionStorage.removeItem('employeeActiveTab');
     sessionStorage.removeItem('employeeScrollPosition');
@@ -201,13 +177,6 @@ export default function EmployeeDashboard() {
       case 'profile': return <EmployeeProfileView />;
       default: return <EmployeeTasksView />;
     }
-  };
-
-  const statusColors: Record<string, string> = {
-    online: 'bg-status-online',
-    away: 'bg-status-away',
-    busy: 'bg-status-busy',
-    offline: 'bg-status-offline'
   };
 
   return (
@@ -279,7 +248,6 @@ export default function EmployeeDashboard() {
                       {profile?.first_name?.[0]}{profile?.last_name?.[0]}
                     </AvatarFallback>
                   </Avatar>
-                  <span className={`absolute bottom-0.5 right-0.5 h-3 w-3 rounded-full border-2 border-card ${statusColors[userStatus]} shadow-sm`} />
                 </div>
                 <div className="flex-1 min-w-0">
                   <p className="font-semibold text-sm truncate">{profile?.first_name} {profile?.last_name}</p>
@@ -309,17 +277,14 @@ export default function EmployeeDashboard() {
 
               <div className="flex items-center gap-2">
                 <div className="hidden sm:flex items-center gap-3 px-3 py-1.5 bg-muted/50 rounded-full">
-                  <div className="relative">
-                    <Avatar className="h-8 w-8 ring-2 ring-primary/20">
-                      {avatarUrl ? (
-                        <AvatarImage src={avatarUrl} alt={`${profile?.first_name} ${profile?.last_name}`} />
-                      ) : null}
-                      <AvatarFallback className="bg-primary/10 text-primary text-xs font-semibold">
-                        {profile?.first_name?.[0]}{profile?.last_name?.[0]}
-                      </AvatarFallback>
-                    </Avatar>
-                    <span className={`absolute bottom-0 right-0 h-2.5 w-2.5 rounded-full border-2 border-muted/50 ${statusColors[userStatus]}`} />
-                  </div>
+                  <Avatar className="h-8 w-8 ring-2 ring-primary/20">
+                    {avatarUrl ? (
+                      <AvatarImage src={avatarUrl} alt={`${profile?.first_name} ${profile?.last_name}`} />
+                    ) : null}
+                    <AvatarFallback className="bg-primary/10 text-primary text-xs font-semibold">
+                      {profile?.first_name?.[0]}{profile?.last_name?.[0]}
+                    </AvatarFallback>
+                  </Avatar>
                   <span className="text-sm font-medium">{profile?.first_name}</span>
                 </div>
                 <NotificationSettings />
