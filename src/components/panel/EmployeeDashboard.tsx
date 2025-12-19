@@ -4,7 +4,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { ThemeToggle } from '@/components/ThemeToggle';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { LogOut, ClipboardList, Clock, FileText, Calendar, User, MessageCircle, Menu, X } from 'lucide-react';
+import { LogOut, ClipboardList, Clock, FileText, Calendar, User, MessageCircle, Menu, X, Bell } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import logo from '@/assets/logo.png';
 import EmployeeTasksView from './employee/EmployeeTasksView';
@@ -13,6 +13,7 @@ import EmployeeDocumentsView from './employee/EmployeeDocumentsView';
 import EmployeeVacationView from './employee/EmployeeVacationView';
 import EmployeeProfileView from './employee/EmployeeProfileView';
 import EmployeeChatView from './employee/EmployeeChatView';
+import EmployeeNotificationsView from './employee/EmployeeNotificationsView';
 import { StatusSelector } from './StatusSelector';
 import { InboxButton } from './InboxButton';
 import { TelegramToast } from './TelegramToast';
@@ -35,6 +36,7 @@ const menuItems = [
   { id: 'time', label: 'Zeiterfassung', icon: Clock },
   { id: 'documents', label: 'Dokumente', icon: FileText },
   { id: 'vacation', label: 'Urlaub', icon: Calendar },
+  { id: 'notifications', label: 'Benachrichtigungen', icon: Bell },
   { id: 'chat', label: 'Nachrichten', icon: MessageCircle },
   { id: 'profile', label: 'Profil', icon: User },
 ];
@@ -45,8 +47,35 @@ export default function EmployeeDashboard() {
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
   const [userStatus, setUserStatus] = useState<'online' | 'away' | 'busy' | 'offline'>('offline');
   const [notification, setNotification] = useState<NotificationData | null>(null);
+  const [unreadNotifications, setUnreadNotifications] = useState(0);
   const { profile, signOut, user } = useAuth();
   const navigate = useNavigate();
+
+  // Fetch unread notifications count
+  useEffect(() => {
+    if (!user) return;
+
+    const fetchUnreadCount = async () => {
+      const { count } = await supabase
+        .from('notifications')
+        .select('*', { count: 'exact', head: true })
+        .eq('user_id', user.id)
+        .is('read_at', null);
+      
+      setUnreadNotifications(count || 0);
+    };
+
+    fetchUnreadCount();
+
+    const channel = supabase
+      .channel('notification-count')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'notifications' }, fetchUnreadCount)
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [user]);
 
   useEffect(() => {
     if (profile?.avatar_url) {
@@ -163,6 +192,7 @@ export default function EmployeeDashboard() {
       case 'time': return <EmployeeTimeView />;
       case 'documents': return <EmployeeDocumentsView />;
       case 'vacation': return <EmployeeVacationView />;
+      case 'notifications': return <EmployeeNotificationsView />;
       case 'chat': return <EmployeeChatView />;
       case 'profile': return <EmployeeProfileView />;
       default: return <EmployeeTasksView />;
@@ -208,15 +238,29 @@ export default function EmployeeDashboard() {
                   <button
                     onClick={() => setActiveTab(item.id)}
                     className={cn(
-                      "w-full flex items-center gap-3 px-4 py-3 rounded-xl text-left transition-all duration-200",
+                      "w-full flex items-center gap-3 px-4 py-3 rounded-xl text-left transition-all duration-200 relative",
                       activeTab === item.id 
                         ? "bg-primary text-primary-foreground shadow-lg shadow-primary/25" 
                         : "hover:bg-muted/80 text-muted-foreground hover:text-foreground",
                       !sidebarOpen && "md:justify-center md:px-2"
                     )}
                   >
-                    <item.icon className={cn("h-5 w-5 shrink-0", activeTab === item.id && "animate-pulse")} />
-                    {sidebarOpen && <span className="font-medium">{item.label}</span>}
+                    <div className="relative">
+                      <item.icon className={cn("h-5 w-5 shrink-0", activeTab === item.id && "animate-pulse")} />
+                      {item.id === 'notifications' && unreadNotifications > 0 && (
+                        <span className="absolute -top-1.5 -right-1.5 h-4 w-4 bg-red-500 text-white text-[10px] font-bold rounded-full flex items-center justify-center">
+                          {unreadNotifications > 9 ? '9+' : unreadNotifications}
+                        </span>
+                      )}
+                    </div>
+                    {sidebarOpen && (
+                      <span className="font-medium flex-1">{item.label}</span>
+                    )}
+                    {sidebarOpen && item.id === 'notifications' && unreadNotifications > 0 && (
+                      <span className="bg-red-500 text-white text-xs font-bold px-2 py-0.5 rounded-full">
+                        {unreadNotifications}
+                      </span>
+                    )}
                   </button>
                 </li>
               ))}
