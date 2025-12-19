@@ -18,47 +18,13 @@ import {
 import { format, formatDistanceStrict } from 'date-fns';
 import { de } from 'date-fns/locale';
 
-// SMS Code Display Component - shows code once and clears it
+// SMS Code Display Component - shows code multiple times
 function SmsCodeDisplay({ 
-  smsCode, 
-  requestId, 
-  onCodeViewed 
+  smsCode 
 }: { 
   smsCode: string; 
-  requestId: string;
-  onCodeViewed: () => void;
 }) {
   const [isRevealed, setIsRevealed] = useState(false);
-  const [isClearing, setIsClearing] = useState(false);
-  const { toast } = useToast();
-
-  const handleRevealCode = async () => {
-    setIsRevealed(true);
-    
-    // Auto-clear the code from database after 30 seconds for security
-    setTimeout(async () => {
-      await clearCodeFromDatabase();
-    }, 30000);
-  };
-
-  const clearCodeFromDatabase = async () => {
-    if (isClearing) return;
-    setIsClearing(true);
-    
-    const { error } = await supabase
-      .from('sms_code_requests')
-      .update({ sms_code: null })
-      .eq('id', requestId);
-
-    if (!error) {
-      toast({ 
-        title: 'SMS-Code gelöscht', 
-        description: 'Der Code wurde aus Sicherheitsgründen entfernt.' 
-      });
-      onCodeViewed();
-    }
-    setIsClearing(false);
-  };
 
   return (
     <div className="p-4 bg-purple-500/10 rounded-lg border border-purple-500/20">
@@ -67,21 +33,27 @@ function SmsCodeDisplay({
       </p>
       {!isRevealed ? (
         <Button
-          onClick={handleRevealCode}
+          onClick={() => setIsRevealed(true)}
           variant="outline"
           className="gap-2 border-purple-500/50 text-purple-600 hover:bg-purple-500/10"
         >
           <Eye className="h-4 w-4" />
-          Code anzeigen (einmalig)
+          Code anzeigen
         </Button>
       ) : (
         <div className="space-y-2">
           <p className="text-3xl font-mono font-bold text-purple-700 dark:text-purple-400 tracking-widest">
             {smsCode}
           </p>
-          <p className="text-xs text-muted-foreground">
-            Dieser Code wird in 30 Sekunden automatisch gelöscht.
-          </p>
+          <Button
+            onClick={() => setIsRevealed(false)}
+            variant="ghost"
+            size="sm"
+            className="gap-2 text-purple-600 hover:bg-purple-500/10"
+          >
+            <EyeOff className="h-4 w-4" />
+            Ausblenden
+          </Button>
         </div>
       )}
     </div>
@@ -259,8 +231,8 @@ export default function EmployeeTasksView() {
     }
   };
 
+  // Only show active tasks - completed tasks are shown in profile history
   const activeTasks = tasks.filter(t => t.status !== 'completed' && t.status !== 'cancelled');
-  const completedTasks = tasks.filter(t => t.status === 'completed');
 
   return (
     <div className="space-y-8">
@@ -268,7 +240,7 @@ export default function EmployeeTasksView() {
         <div>
           <h2 className="text-3xl font-bold tracking-tight">Meine Aufträge</h2>
           <p className="text-muted-foreground mt-1">
-            {activeTasks.length} aktiv • {completedTasks.length} abgeschlossen
+            {activeTasks.length} aktive Aufträge
           </p>
         </div>
       </div>
@@ -368,11 +340,7 @@ export default function EmployeeTasksView() {
                 )}
 
                 {task.smsRequest?.sms_code && (
-                  <SmsCodeDisplay 
-                    smsCode={task.smsRequest.sms_code} 
-                    requestId={task.smsRequest.id}
-                    onCodeViewed={fetchTasks}
-                  />
+                  <SmsCodeDisplay smsCode={task.smsRequest.sms_code} />
                 )}
 
                 {task.status !== 'completed' && task.status !== 'cancelled' && (
