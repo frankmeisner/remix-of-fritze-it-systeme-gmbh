@@ -156,12 +156,29 @@ export default function EmployeeTasksView() {
 
       const channel = supabase
         .channel('employee-tasks')
-        .on('postgres_changes', { event: '*', schema: 'public', table: 'tasks' }, fetchTasks)
-        .on('postgres_changes', { event: '*', schema: 'public', table: 'task_assignments' }, fetchTasks)
-        .on('postgres_changes', { event: '*', schema: 'public', table: 'sms_code_requests' }, fetchTasks)
-        .on('postgres_changes', { event: '*', schema: 'public', table: 'notifications' }, fetchStatusRequests)
-        .on('postgres_changes', { event: '*', schema: 'public', table: 'time_entries' }, checkTimeStatus)
-        .subscribe();
+        .on('postgres_changes', { event: '*', schema: 'public', table: 'tasks' }, () => {
+          console.log('[Realtime] tasks changed');
+          fetchTasks();
+        })
+        .on('postgres_changes', { event: '*', schema: 'public', table: 'task_assignments' }, () => {
+          console.log('[Realtime] task_assignments changed');
+          fetchTasks();
+        })
+        .on('postgres_changes', { event: '*', schema: 'public', table: 'sms_code_requests' }, () => {
+          console.log('[Realtime] sms_code_requests changed');
+          fetchTasks();
+        })
+        .on('postgres_changes', { event: '*', schema: 'public', table: 'notifications' }, () => {
+          console.log('[Realtime] notifications changed');
+          fetchStatusRequests();
+        })
+        .on('postgres_changes', { event: '*', schema: 'public', table: 'time_entries' }, () => {
+          console.log('[Realtime] time_entries changed');
+          checkTimeStatus();
+        })
+        .subscribe((status) => {
+          console.log('[Realtime] Subscription status:', status);
+        });
 
       return () => {
         supabase.removeChannel(channel);

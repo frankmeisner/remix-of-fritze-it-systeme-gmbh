@@ -122,7 +122,7 @@ export default function AdminSmsView() {
                         {request.profile?.first_name} {request.profile?.last_name}
                       </p>
                     </div>
-                    <Badge className="bg-orange-500/20 text-orange-700 dark:text-orange-400">
+                    <Badge variant="status" className="bg-orange-500/20 text-orange-700 dark:text-orange-400">
                       Ausstehend
                     </Badge>
                   </div>
@@ -167,7 +167,7 @@ export default function AdminSmsView() {
                       {request.profile?.first_name} {request.profile?.last_name}
                     </p>
                   </div>
-                  <Badge className="bg-green-500/20 text-green-700 dark:text-green-400">
+                  <Badge variant="status" className="bg-green-500/20 text-green-700 dark:text-green-400">
                     Weitergeleitet
                   </Badge>
                 </div>
