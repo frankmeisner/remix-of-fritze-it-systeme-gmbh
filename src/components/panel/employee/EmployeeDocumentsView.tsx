@@ -13,6 +13,7 @@ import { format } from 'date-fns';
 import { de } from 'date-fns/locale';
 
 const documentTypes = [
+  { value: 'documentation', label: 'Dokumentation' },
   { value: 'id_card', label: 'Personalausweis' },
   { value: 'passport', label: 'Reisepass' },
   { value: 'contract', label: 'Vertrag' },

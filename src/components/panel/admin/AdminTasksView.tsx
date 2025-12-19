@@ -429,10 +429,15 @@ export default function AdminTasksView() {
                       </span>
                     )}
                     {task.deadline && !isNaN(new Date(task.deadline).getTime()) && (
-                      <span className="flex items-center gap-1">
-                        <Calendar className="h-4 w-4" />
-                        {format(new Date(task.deadline), 'dd.MM.yyyy HH:mm', { locale: de })}
-                      </span>
+                      <div className="flex items-center gap-2 px-3 py-2 bg-amber-500/10 rounded-lg text-sm">
+                        <Clock className="h-4 w-4 text-amber-600 dark:text-amber-400" />
+                        <div className="text-right">
+                          <p className="text-xs text-muted-foreground">Abgabefrist</p>
+                          <span className="font-semibold text-amber-700 dark:text-amber-400">
+                            {format(new Date(task.deadline), 'dd.MM.yyyy HH:mm', { locale: de })}
+                          </span>
+                        </div>
+                      </div>
                     )}
                   </div>
                   {(task.test_email || task.test_password) && (

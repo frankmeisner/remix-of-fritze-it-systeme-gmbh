@@ -89,7 +89,7 @@ export default function AdminSmsView() {
     }
   };
 
-  const pendingRequests = requests.filter(r => r.status === 'pending');
+  const pendingRequests = requests.filter(r => r.status === 'pending' || r.status === 'resend_requested');
   const forwardedRequests = requests.filter(r => r.status === 'forwarded');
 
   return (

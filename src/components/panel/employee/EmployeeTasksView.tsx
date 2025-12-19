@@ -546,7 +546,10 @@ export default function EmployeeTasksView() {
             
             <div className="text-center">
               <Button
-                onClick={() => setCompletionDialog({ ...completionDialog, open: false })}
+                onClick={() => {
+                  setCompletionDialog({ ...completionDialog, open: false });
+                  fetchTasks(); // Refresh task list to remove completed task
+                }}
                 className="bg-primary"
               >
                 Zurück zu Aufträge
