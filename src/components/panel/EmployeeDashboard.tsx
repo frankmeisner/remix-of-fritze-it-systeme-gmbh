@@ -36,7 +36,9 @@ const menuItems = [
 ];
 
 export default function EmployeeDashboard() {
-  const [activeTab, setActiveTab] = useState('tasks');
+  const [activeTab, setActiveTabState] = useState(() => {
+    return sessionStorage.getItem('employeeActiveTab') || 'tasks';
+  });
   const [pendingTaskId, setPendingTaskId] = useState<string | null>(null);
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
@@ -45,6 +47,11 @@ export default function EmployeeDashboard() {
   const { profile, signOut, user } = useAuth();
   const navigate = useNavigate();
   const { toast } = useToast();
+
+  const setActiveTab = (tab: string) => {
+    sessionStorage.setItem('employeeActiveTab', tab);
+    setActiveTabState(tab);
+  };
 
   // Fetch unread notifications count and listen for new status requests
   useEffect(() => {
