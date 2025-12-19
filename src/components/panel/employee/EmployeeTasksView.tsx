@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Task, TaskAssignment, TaskStatus, TaskPriority, Profile, SmsCodeRequest } from '@/types/panel';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -10,6 +10,8 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } f
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/hooks/useAuth';
 import { useTabContext } from '@/components/panel/EmployeeDashboard';
+import { useNotificationSound } from '@/hooks/useNotificationSound';
+import { usePushNotifications } from '@/hooks/usePushNotifications';
 
 import { 
   Calendar, User, Euro, AlertCircle, MessageSquare, CheckCircle2, 
@@ -124,6 +126,19 @@ export default function EmployeeTasksView() {
   const { toast } = useToast();
   const { user } = useAuth();
   const tabContext = useTabContext();
+  const { playNotificationSound } = useNotificationSound();
+  const { permission, requestPermission, showNotification } = usePushNotifications();
+  
+  // Track if initial load is complete to avoid notifications on page load
+  const initialLoadComplete = useRef(false);
+  const previousTaskCount = useRef<number>(0);
+
+  // Request push notification permission on mount
+  useEffect(() => {
+    if (permission === 'default') {
+      requestPermission();
+    }
+  }, [permission, requestPermission]);
 
   // Check if user is currently checked in
   const checkTimeStatus = async () => {
@@ -148,6 +163,32 @@ export default function EmployeeTasksView() {
     }
   };
 
+  // Notify about new task assignment
+  const notifyNewTask = useCallback((taskTitle?: string) => {
+    playNotificationSound();
+    showNotification('🆕 Neuer Auftrag!', {
+      body: taskTitle ? `Neuer Auftrag: ${taskTitle}` : 'Dir wurde ein neuer Auftrag zugewiesen.',
+      tag: 'new-task',
+    });
+    toast({
+      title: '🆕 Neuer Auftrag!',
+      description: taskTitle ? `"${taskTitle}" wurde dir zugewiesen.` : 'Dir wurde ein neuer Auftrag zugewiesen.',
+    });
+  }, [playNotificationSound, showNotification, toast]);
+
+  // Notify about SMS code received
+  const notifySmsCode = useCallback(() => {
+    playNotificationSound();
+    showNotification('📱 SMS-Code erhalten!', {
+      body: 'Der Admin hat dir den SMS-Code weitergeleitet.',
+      tag: 'sms-code',
+    });
+    toast({
+      title: '📱 SMS-Code erhalten!',
+      description: 'Der Admin hat dir den SMS-Code weitergeleitet.',
+    });
+  }, [playNotificationSound, showNotification, toast]);
+
   useEffect(() => {
     if (user) {
       fetchTasks();
@@ -159,15 +200,44 @@ export default function EmployeeTasksView() {
       const channel = supabase
         .channel(`employee-tasks-${user.id}`)
         .on('postgres_changes', { 
-          event: '*', 
+          event: 'INSERT', 
           schema: 'public', 
           table: 'task_assignments'
         }, (payload) => {
-          console.log('[Realtime] task_assignments changed', payload);
+          console.log('[Realtime] task_assignments INSERT', payload);
+          const newData = payload.new as Record<string, unknown> | null;
+          // New task assigned to current user
+          if (newData?.user_id === user.id && initialLoadComplete.current) {
+            // Fetch task title for notification
+            supabase.from('tasks').select('title').eq('id', newData.task_id as string).single()
+              .then(({ data: taskData }) => {
+                notifyNewTask(taskData?.title);
+              });
+            fetchTasks();
+          } else if (newData?.user_id === user.id) {
+            fetchTasks();
+          }
+        })
+        .on('postgres_changes', { 
+          event: 'UPDATE', 
+          schema: 'public', 
+          table: 'task_assignments'
+        }, (payload) => {
+          console.log('[Realtime] task_assignments UPDATE', payload);
           const newData = payload.new as Record<string, unknown> | null;
           const oldData = payload.old as Record<string, unknown> | null;
-          // Only refetch if this affects current user
           if (newData?.user_id === user.id || oldData?.user_id === user.id) {
+            fetchTasks();
+          }
+        })
+        .on('postgres_changes', { 
+          event: 'DELETE', 
+          schema: 'public', 
+          table: 'task_assignments'
+        }, (payload) => {
+          console.log('[Realtime] task_assignments DELETE', payload);
+          const oldData = payload.old as Record<string, unknown> | null;
+          if (oldData?.user_id === user.id) {
             fetchTasks();
           }
         })
@@ -181,12 +251,9 @@ export default function EmployeeTasksView() {
           const oldData = payload.old as Record<string, unknown> | null;
           // Only process if this affects current user
           if (newData?.user_id === user.id || oldData?.user_id === user.id) {
-            // Show toast when SMS code is received
-            if (payload.eventType === 'UPDATE' && newData?.sms_code && !oldData?.sms_code) {
-              toast({
-                title: '📱 SMS-Code erhalten!',
-                description: 'Der Admin hat dir den SMS-Code weitergeleitet.',
-              });
+            // Show notification when SMS code is received
+            if (payload.eventType === 'UPDATE' && newData?.sms_code && !oldData?.sms_code && initialLoadComplete.current) {
+              notifySmsCode();
             }
             fetchTasks();
           }
@@ -226,13 +293,19 @@ export default function EmployeeTasksView() {
         })
         .subscribe((status) => {
           console.log('[Realtime] Subscription status:', status);
+          if (status === 'SUBSCRIBED') {
+            // Mark initial load as complete after a short delay
+            setTimeout(() => {
+              initialLoadComplete.current = true;
+            }, 1000);
+          }
         });
 
       return () => {
         supabase.removeChannel(channel);
       };
     }
-  }, [user, toast]);
+  }, [user, notifyNewTask, notifySmsCode]);
 
   const fetchStatusRequests = async () => {
     if (!user) return;
