@@ -88,19 +88,19 @@ function SmsCodeDisplay({
 }
 
 const priorityConfig: Record<TaskPriority, { color: string; label: string; icon: string }> = {
-  low: { color: 'bg-slate-500/20 text-slate-700 dark:text-slate-300 border border-slate-500/30 !font-bold', label: 'Niedrig', icon: '○' },
-  medium: { color: 'bg-yellow-500/20 text-yellow-700 dark:text-yellow-400 border border-yellow-500/30 !font-bold', label: 'Mittel', icon: '◐' },
-  high: { color: 'bg-red-100 text-red-800 dark:bg-red-600/30 dark:text-red-300 border border-red-400 dark:border-red-500/50 !font-bold animate-priority-pulse', label: 'Hoch', icon: '●' },
-  urgent: { color: 'bg-red-200 text-red-900 dark:bg-red-700/40 dark:text-red-200 border border-red-500 dark:border-red-600/60 !font-bold animate-priority-pulse', label: 'Dringend', icon: '⬤' }
+  low: { color: 'bg-slate-500/20 text-slate-700 dark:text-slate-300 border border-slate-500/30 !font-bold hover:bg-slate-500/20 hover:text-slate-700 dark:hover:text-slate-300', label: 'Niedrig', icon: '○' },
+  medium: { color: 'bg-yellow-500/20 text-yellow-700 dark:text-yellow-400 border border-yellow-500/30 !font-bold hover:bg-yellow-500/20 hover:text-yellow-700 dark:hover:text-yellow-400', label: 'Mittel', icon: '◐' },
+  high: { color: 'bg-red-100 text-red-800 dark:bg-red-600/30 dark:text-red-300 border border-red-400 dark:border-red-500/50 !font-bold animate-priority-pulse hover:bg-red-100 hover:text-red-800 dark:hover:bg-red-600/30 dark:hover:text-red-300', label: 'Hoch', icon: '●' },
+  urgent: { color: 'bg-red-200 text-red-900 dark:bg-red-700/40 dark:text-red-200 border border-red-500 dark:border-red-600/60 !font-bold animate-priority-pulse hover:bg-red-200 hover:text-red-900 dark:hover:bg-red-700/40 dark:hover:text-red-200', label: 'Dringend', icon: '⬤' }
 };
 
 const statusConfig: Record<TaskStatus, { color: string; label: string }> = {
-  pending: { color: 'bg-muted text-muted-foreground', label: 'Offen' },
-  assigned: { color: 'bg-emerald-500/20 text-emerald-700 dark:text-emerald-400', label: 'Zugewiesen' },
-  in_progress: { color: 'bg-blue-500/20 text-blue-700 dark:text-blue-400', label: 'In Bearbeitung' },
-  sms_requested: { color: 'bg-purple-500/20 text-purple-700 dark:text-purple-400', label: 'SMS angefordert' },
-  completed: { color: 'bg-green-500/20 text-green-700 dark:text-green-400', label: 'Abgeschlossen' },
-  cancelled: { color: 'bg-destructive/20 text-destructive', label: 'Storniert' }
+  pending: { color: 'bg-muted text-muted-foreground hover:bg-muted hover:text-muted-foreground', label: 'Offen' },
+  assigned: { color: 'bg-emerald-500/20 text-emerald-700 dark:text-emerald-400 hover:bg-emerald-500/20 hover:text-emerald-700 dark:hover:text-emerald-400', label: 'Zugewiesen' },
+  in_progress: { color: 'bg-blue-500/20 text-blue-700 dark:text-blue-400 hover:bg-blue-500/20 hover:text-blue-700 dark:hover:text-blue-400', label: 'In Bearbeitung' },
+  sms_requested: { color: 'bg-purple-500/20 text-purple-700 dark:text-purple-400 hover:bg-purple-500/20 hover:text-purple-700 dark:hover:text-purple-400', label: 'SMS angefordert' },
+  completed: { color: 'bg-green-500/20 text-green-700 dark:text-green-400 hover:bg-green-500/20 hover:text-green-700 dark:hover:text-green-400', label: 'Abgeschlossen' },
+  cancelled: { color: 'bg-destructive/20 text-destructive hover:bg-destructive/20 hover:text-destructive', label: 'Storniert' }
 };
 
 interface StatusRequest {
@@ -369,10 +369,10 @@ export default function EmployeeTasksView() {
                   <div className="space-y-2">
                     <CardTitle className="text-xl">{task.title}</CardTitle>
                     <div className="flex flex-wrap items-center gap-2">
-                      <Badge className={`${priorityConfig[task.priority].color} border font-medium hover:opacity-100`}>
+                      <Badge className={`${priorityConfig[task.priority].color} border font-medium`}>
                         {priorityConfig[task.priority].icon} {priorityConfig[task.priority].label}
                       </Badge>
-                      <Badge className={`${statusConfig[task.status].color} hover:opacity-100`}>
+                      <Badge className={statusConfig[task.status].color}>
                         {statusConfig[task.status].label}
                       </Badge>
                       {task.special_compensation && task.special_compensation > 0 && (
