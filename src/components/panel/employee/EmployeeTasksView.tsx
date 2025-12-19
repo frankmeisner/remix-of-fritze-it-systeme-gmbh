@@ -154,33 +154,42 @@ export default function EmployeeTasksView() {
       fetchStatusRequests();
       checkTimeStatus();
 
-      // Subscribe to realtime changes with user-specific filter where applicable
+      // Subscribe to realtime changes - no filters, RLS handles security
+      // Filters with UPDATE events can be unreliable, so we fetch and let RLS filter
       const channel = supabase
         .channel(`employee-tasks-${user.id}`)
         .on('postgres_changes', { 
           event: '*', 
           schema: 'public', 
-          table: 'task_assignments',
-          filter: `user_id=eq.${user.id}`
+          table: 'task_assignments'
         }, (payload) => {
           console.log('[Realtime] task_assignments changed', payload);
-          fetchTasks();
+          const newData = payload.new as Record<string, unknown> | null;
+          const oldData = payload.old as Record<string, unknown> | null;
+          // Only refetch if this affects current user
+          if (newData?.user_id === user.id || oldData?.user_id === user.id) {
+            fetchTasks();
+          }
         })
         .on('postgres_changes', { 
           event: '*', 
           schema: 'public', 
-          table: 'sms_code_requests',
-          filter: `user_id=eq.${user.id}`
+          table: 'sms_code_requests'
         }, (payload) => {
           console.log('[Realtime] sms_code_requests changed', payload);
-          // Show toast when SMS code is received
-          if (payload.eventType === 'UPDATE' && payload.new?.sms_code && !payload.old?.sms_code) {
-            toast({
-              title: '📱 SMS-Code erhalten!',
-              description: 'Der Admin hat dir den SMS-Code weitergeleitet.',
-            });
+          const newData = payload.new as Record<string, unknown> | null;
+          const oldData = payload.old as Record<string, unknown> | null;
+          // Only process if this affects current user
+          if (newData?.user_id === user.id || oldData?.user_id === user.id) {
+            // Show toast when SMS code is received
+            if (payload.eventType === 'UPDATE' && newData?.sms_code && !oldData?.sms_code) {
+              toast({
+                title: '📱 SMS-Code erhalten!',
+                description: 'Der Admin hat dir den SMS-Code weitergeleitet.',
+              });
+            }
+            fetchTasks();
           }
-          fetchTasks();
         })
         .on('postgres_changes', { 
           event: '*', 
@@ -188,25 +197,32 @@ export default function EmployeeTasksView() {
           table: 'tasks'
         }, (payload) => {
           console.log('[Realtime] tasks changed', payload);
+          // Always refetch - RLS will filter appropriately
           fetchTasks();
         })
         .on('postgres_changes', { 
           event: '*', 
           schema: 'public', 
-          table: 'notifications',
-          filter: `user_id=eq.${user.id}`
-        }, () => {
-          console.log('[Realtime] notifications changed');
-          fetchStatusRequests();
+          table: 'notifications'
+        }, (payload) => {
+          console.log('[Realtime] notifications changed', payload);
+          const newData = payload.new as Record<string, unknown> | null;
+          const oldData = payload.old as Record<string, unknown> | null;
+          if (newData?.user_id === user.id || oldData?.user_id === user.id) {
+            fetchStatusRequests();
+          }
         })
         .on('postgres_changes', { 
           event: '*', 
           schema: 'public', 
-          table: 'time_entries',
-          filter: `user_id=eq.${user.id}`
-        }, () => {
-          console.log('[Realtime] time_entries changed');
-          checkTimeStatus();
+          table: 'time_entries'
+        }, (payload) => {
+          console.log('[Realtime] time_entries changed', payload);
+          const newData = payload.new as Record<string, unknown> | null;
+          const oldData = payload.old as Record<string, unknown> | null;
+          if (newData?.user_id === user.id || oldData?.user_id === user.id) {
+            checkTimeStatus();
+          }
         })
         .subscribe((status) => {
           console.log('[Realtime] Subscription status:', status);
