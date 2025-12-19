@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { LogOut, ClipboardList, Clock, FileText, Calendar, User, Menu, X, Bell } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import { useToast } from '@/hooks/use-toast';
 import logo from '@/assets/logo.png';
 import EmployeeTasksView from './employee/EmployeeTasksView';
 import EmployeeTimeView from './employee/EmployeeTimeView';
@@ -43,8 +44,9 @@ export default function EmployeeDashboard() {
   const [unreadNotifications, setUnreadNotifications] = useState(0);
   const { profile, signOut, user } = useAuth();
   const navigate = useNavigate();
+  const { toast } = useToast();
 
-  // Fetch unread notifications count
+  // Fetch unread notifications count and listen for new status requests
   useEffect(() => {
     if (!user) return;
 
@@ -63,12 +65,25 @@ export default function EmployeeDashboard() {
     const channel = supabase
       .channel('notification-count')
       .on('postgres_changes', { event: '*', schema: 'public', table: 'notifications' }, fetchUnreadCount)
+      .on('postgres_changes', { 
+        event: 'INSERT', 
+        schema: 'public', 
+        table: 'notifications'
+      }, (payload) => {
+        // Show toast for status requests
+        if (payload.new.user_id === user.id && payload.new.type === 'status_request') {
+          toast({
+            title: payload.new.title,
+            description: 'Bitte gehe zum Auftrag und trage deinen Fortschritt ein.',
+          });
+        }
+      })
       .subscribe();
 
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [user]);
+  }, [user, toast]);
 
   useEffect(() => {
     if (profile?.avatar_url) {
